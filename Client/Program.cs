@@ -67,6 +67,7 @@ public class Program
         LocalWorld.ListenForPackets();
 
         nativeWindowSettings.Title = "Simple Voxel Engine";
+        nativeWindowSettings.ClientSize = new OpenTK.Mathematics.Vector2i(1920, 1080);
 
         // Create the window object
         GameCanvas gameCanvas = new GameCanvas(gameWindowSettings, nativeWindowSettings);
