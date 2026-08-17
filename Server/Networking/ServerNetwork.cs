@@ -1,4 +1,5 @@
 ﻿using Server.Worlds;
+using Shared;
 using Shared.Networking;
 using System.Net.Sockets;
 
@@ -7,15 +8,90 @@ namespace Server.Networking;
 public class ServerNetwork
 {
     private List<Connection> connections = new List<Connection>();
+    private List<Connection> futureConnections = new List<Connection>();
     private TcpListener? listener;
 
     public void Start(int port)
     {
+        // Start the classic TCP Listener...
         listener = new TcpListener(System.Net.IPAddress.Any, port);
         listener.Start();
+
+        // If Dreams is enabled
+        try
+        {
+            TcpClient client = new TcpClient(Dreams.DREAMS_IP, Dreams.DREAMS_PORT);
+            TcpConnection tcpConnection = new TcpConnection(client);
+
+            // Tell them we are a server
+            tcpConnection.SendPacket(new DreamsServerInfoPacket().Write());
+
+            SetupDreams(tcpConnection);
+            connections.Add(tcpConnection);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Could not connect with the dreams server. Reason: {ex}");
+        }
     }
 
-    public void AcceptPending()
+    private TcpConnection? dreamsServerConnection;
+    public void SetupDreams(TcpConnection dreamsConnection)
+    {
+        this.dreamsServerConnection = dreamsConnection;
+        dreamsConnection.isDreamsAuthorizedServer = true;
+
+        dreamsConnection.OnPacket += DreamsConnection_OnPacket;
+    }
+
+    private void DreamsConnection_OnPacket(Packet packet)
+    {
+        if (packet.GetPacketType() == PacketType.DreamsAddUser)
+        {
+            DreamsAddUserPacket dreamsAddUserPacket = new DreamsAddUserPacket();
+            dreamsAddUserPacket.Read(packet);
+
+            DreamsConnection dreamsConnection = new DreamsConnection(dreamsAddUserPacket.id);
+            futureConnections.Add(dreamsConnection);
+            dreamsConnections.Add(dreamsConnection.id, dreamsConnection);
+
+            Console.WriteLine("Added dreams user with id: " + dreamsConnection.id);
+            // When a connection wants to send a packet, we need to pass it to dreams instead.
+            dreamsConnection.OnSendPacket += (Packet packet) =>
+            {
+                DreamsPacketDataPacket dreamsPacketDataPacket = new DreamsPacketDataPacket();
+                dreamsPacketDataPacket.packet = packet;
+                dreamsPacketDataPacket.owner = dreamsConnection.id;
+
+                dreamsServerConnection?.SendPacket(dreamsPacketDataPacket.Write());
+            };
+
+            CatchupConnection(dreamsConnection);
+        }
+
+        if (packet.GetPacketType() == PacketType.DreamsPacketData)
+        {
+            DreamsPacketDataPacket dreamsPacketDataPacket = new DreamsPacketDataPacket();
+            dreamsPacketDataPacket.Read(packet);
+
+            dreamsConnections[dreamsPacketDataPacket.owner].ExecutePacket(dreamsPacketDataPacket.packet);
+        }
+
+        if (packet.GetPacketType() == PacketType.DreamsRemoveUser)
+        {
+            DreamsRemoveUserPacket removePacket = new DreamsRemoveUserPacket();
+            removePacket.Read(packet);
+
+            DreamsConnection connection = dreamsConnections[removePacket.id];
+            dreamsConnections.Remove(removePacket.id);
+
+            connection.Disconnect();
+        }
+    }
+
+    private Dictionary<int, DreamsConnection> dreamsConnections = new Dictionary<int, DreamsConnection>();
+
+    public void AcceptTcpServerConnections()
     {
         if (listener == null)
             throw new Exception("ServerNetwork has to be started before you can accept pending clients.");
@@ -23,20 +99,26 @@ public class ServerNetwork
         if (listener.Pending())
         {
             TcpClient client = listener.AcceptTcpClient();
-            Connection connection = new Connection(client);
+            Connection connection = new TcpConnection(client);
             connections.Add(connection);
-            OnConnect?.Invoke(connection);
-
-            Player player = new Player(connection);
-            // Load all world data
-            Multiverse.SendWorldData(connection, Multiverse.GetMainWorld());
-
-            Multiverse.GetMainWorld().SpawnEntity(player);
-
-            AuthenticatePacket authenticatePacket = new AuthenticatePacket();
-            authenticatePacket.EntityId = player.Id;
-            connection.SendPacket(authenticatePacket.Write());
+            CatchupConnection(connection);
         }
+    }
+
+    public void CatchupConnection(Connection connection)
+    {
+        OnConnect?.Invoke(connection);
+
+        Player player = new Player(connection);
+
+        // Load all world data
+        Multiverse.SendWorldData(connection, Multiverse.GetMainWorld());
+
+        Multiverse.GetMainWorld().SpawnEntity(player);
+
+        AuthenticatePacket authenticatePacket = new AuthenticatePacket();
+        authenticatePacket.EntityId = player.Id;
+        connection.SendPacket(authenticatePacket.Write());
     }
 
     public void BroadcastPacket(Packet packet, Connection? exlude = null)
@@ -58,10 +140,19 @@ public class ServerNetwork
             return !c.IsConnected();
         });
 
+
+
         foreach (Connection connection in connections)
         {
             connection.ReadPackets(100);
         }
+
+        foreach (Connection connection in futureConnections)
+        {
+            connections.Add(connection);
+        }
+
+        futureConnections.Clear();
     }
 
 }

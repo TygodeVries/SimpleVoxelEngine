@@ -1,16 +1,16 @@
-﻿using OpenTK.Mathematics;
-
+﻿
+using Shared.Mathf;
 namespace Shared.Worlds;
 
 public class RaycastHit
 {
     public Chunk Chunk;
-    public Vector3i ChunkBlockPos;
-    public Vector3i WorldBlockPos;
-    public Vector3i Normal;
+    public Vector3 ChunkBlockPos;
+    public Vector3 WorldBlockPos;
+    public Vector3 Normal;
     public short Block;
 
-    public RaycastHit(Chunk chunk, Vector3i chunkBlockPos, Vector3i worldBlockPos, Vector3i normal, short block)
+    public RaycastHit(Chunk chunk, Vector3 chunkBlockPos, Vector3 worldBlockPos, Vector3 normal, short block)
     {
         Normal = normal;
         Chunk = chunk;

@@ -1,4 +1,5 @@
-﻿using OpenTK.Mathematics;
+﻿
+using Shared.Mathf;
 using Shared.Networking;
 using Shared.Worlds;
 

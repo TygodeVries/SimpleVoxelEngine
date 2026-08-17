@@ -1,15 +1,16 @@
 ﻿using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
+using Shared.Mathf;
 using Shared.Worlds;
 
 namespace Client.Rendering;
 
 public class ChunkRenderer : Renderer
 {
-    private Chunk chunk;
+    public Chunk Chunk { get; set; }
     public ChunkRenderer(Chunk chunk)
     {
-        this.chunk = chunk;
+        this.Chunk = chunk;
         modelMatrix = Matrix4.CreateTranslation(chunk.X * 16, chunk.Y * 16, chunk.Z * 16);
     }
 
@@ -17,11 +18,12 @@ public class ChunkRenderer : Renderer
 
     public override void Render(bool isShadowPass)
     {
+        bool allowedUpdateFrame = (Time.Frame + Chunk.X) % 16 == 1;
 
-        if (chunk.isDirty && !isShadowPass)
+        if (Chunk.isDirty && !isShadowPass && allowedUpdateFrame)
         {
             UpdateRender();
-            chunk.Optimize();
+            Chunk.Optimize();
         }
 
 
@@ -35,9 +37,9 @@ public class ChunkRenderer : Renderer
             modelObjectGlId = GL.GenVertexArray();
         }
 
-        if (chunk.GetChunkType() == Chunk.ChunkType.Single)
+        if (Chunk.GetChunkType() == Chunk.ChunkType.Single)
         {
-            short blockType = chunk.GetBlock(0, 0, 0);
+            short blockType = Chunk.GetBlock(0, 0, 0);
             if (BlockData.IsInvisible(blockType))
             {
                 renderType = ChunkRenderType.Empty;
@@ -58,7 +60,7 @@ public class ChunkRenderer : Renderer
                 modelObjectGlId = -1;
             }
 
-            modelObjectGlId = ChunkMesher.GenerateMesh(chunk, out indSize);
+            modelObjectGlId = ChunkMesher.GenerateMesh(Chunk, out indSize);
 
             if (modelObjectGlId == -1)
             {
@@ -70,7 +72,7 @@ public class ChunkRenderer : Renderer
             }
         }
 
-        chunk.isDirty = false;
+        Chunk.isDirty = false;
     }
 
     private int modelObjectGlId = -1;

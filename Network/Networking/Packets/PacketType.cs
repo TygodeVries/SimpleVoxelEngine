@@ -9,5 +9,13 @@ public enum PacketType : byte
     DestroyEntity = 4,
     MoveEntity = 5,
     PlaceBlock = 6,
-    BreakBlock = 7
+    BreakBlock = 7,
+    DreamsJoin = 8,
+    DreamsServerInfo = 9,
+    DreamsAddUser = 10,
+    DreamsPacketData = 11,
+    Error = 12,
+    DreamsRemoveUser = 13,
+    DreamsServerList = 14,
+    UnloadChunk = 15
 }

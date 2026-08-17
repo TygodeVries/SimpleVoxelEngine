@@ -1,5 +1,5 @@
-﻿using OpenTK.Mathematics;
-
+﻿using Shared.Mathf;
+using Matrix4 = OpenTK.Mathematics.Matrix4;
 namespace Client.Rendering;
 
 public class Camera
@@ -8,12 +8,12 @@ public class Camera
     public static float Fov = 80;
 
     public static Vector3 Position = Vector3.Zero;
-    public static Vector3 Direction = -Vector3.UnitZ; // Default looking forward (-Z)
+    public static Vector3 Direction = Vector3.Forwards; // Default looking forward (-Z)
 
     public static Matrix4 GetViewMatrix()
     {
         // Target is Current Position offset by the forward Direction
-        return Matrix4.LookAt(Position, Position + Direction, Vector3.UnitY);
+        return Matrix4.LookAt(Position.ToOpenTK(), Position.ToOpenTK() + Direction.ToOpenTK(), Vector3.Up.ToOpenTK());
     }
 
     public static Matrix4 GetProjectionMatrix()
@@ -30,7 +30,7 @@ public class Camera
     {
         get
         {
-            return Vector3.Normalize(Vector3.Cross(Direction, Vector3.UnitY));
+            return Vector3.Cross(Direction, Vector3.Up).Normalized;
         }
     }
 
@@ -38,7 +38,7 @@ public class Camera
     {
         get
         {
-            return Vector3.Normalize(Vector3.Cross(Right, Direction));
+            return Vector3.Cross(Right, Direction).Normalized;
         }
     }
 
@@ -52,9 +52,9 @@ public class Camera
         flatDirection.Y = 0;
         flatDirection.Normalize();
 
-        Vector3 output = new Vector3();
+        Vector3 output = new Vector3(0, 0, 0);
         output += Right * delta.X;
-        output += Vector3.UnitY * delta.Y;
+        output += Vector3.Up * delta.Y;
         output += flatDirection * delta.Z;
 
         return output;

@@ -1,8 +1,8 @@
 ﻿using Client.Input;
 using Client.Networking;
 using Client.Rendering;
-using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using Shared.Mathf;
 using Shared.Networking;
 using Shared.Worlds;
 namespace Client.Entities;
@@ -11,7 +11,7 @@ public class LocalPlayer : Entity
 {
     public LocalPlayer()
     {
-        position = new OpenTK.Mathematics.Vector3(0.5f, 30, 0.5f);
+        position = new Vector3(0.5f, 30, 0.5f);
     }
 
     public override void Tick()
@@ -44,13 +44,13 @@ public class LocalPlayer : Entity
             if (hit == null)
                 return;
 
-            LocalWorld.World.SetBlockAt(0, hit.WorldBlockPos.X, hit.WorldBlockPos.Y, hit.WorldBlockPos.Z);
+            LocalWorld.World.SetBlockAt(0, hit.WorldBlockPos.iX, hit.WorldBlockPos.iY, hit.WorldBlockPos.iZ);
 
 
             PlaceBlockPacket packet = new PlaceBlockPacket();
-            packet.X = hit.WorldBlockPos.X;
-            packet.Y = hit.WorldBlockPos.Y;
-            packet.Z = hit.WorldBlockPos.Z;
+            packet.X = hit.WorldBlockPos.iX;
+            packet.Y = hit.WorldBlockPos.iY;
+            packet.Z = hit.WorldBlockPos.iZ;
             packet.Type = 0;
 
             Network.SendPacket(packet.Write());

@@ -1,4 +1,5 @@
 ﻿using Server.Networking;
+using Server.Plugins;
 using Server.Worlds;
 using Shared.Networking;
 using System.Diagnostics;
@@ -8,19 +9,30 @@ public class Program
 
     public static void Main()
     {
-        Stopwatch sw = new Stopwatch();
-        sw.Start();
+        PluginLoader.LoadAllPlugins();
+
+        Console.WriteLine("--- Loading Server ---");
+
+        Stopwatch sw = Stopwatch.StartNew();
+
         Multiverse.Start();
+        PluginLoader.RunAll();
+
         Console.WriteLine("Starting server...");
+
         server.Start(5050);
         server.OnConnect += (Connection c) =>
         {
             Console.WriteLine("New Connection!");
         };
-        Console.WriteLine($"ServerNetwork has started in {sw.ElapsedMilliseconds}ms!");
+
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine($"Server has started in {sw.ElapsedMilliseconds}ms!");
+        Console.ForegroundColor = ConsoleColor.White;
+
         while (true)
         {
-            server.AcceptPending();
+            server.AcceptTcpServerConnections();
 
             Multiverse.TickWorlds();
             server.ReadPackets();

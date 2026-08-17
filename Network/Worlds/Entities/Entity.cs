@@ -1,5 +1,4 @@
-﻿using OpenTK.Mathematics;
-using Shared.Mathf;
+﻿using Shared.Mathf;
 
 namespace Shared.Worlds;
 
@@ -37,14 +36,14 @@ public abstract class Entity
     public virtual void Tick() { }
     public virtual void OnSpawn() { }
     public virtual void OnDestroy() { }
-    public Vector3 position;
+    public Vector3 position = new Vector3();
 
-    public Vector3 velocity;
+    public Vector3 velocity = new Vector3();
     public Vector3 Size = new(0.6f, 1.8f, 0.6f);
     public void ApplyGravity()
     {
         // Subtract gravity.
-        velocity -= Vector3.UnitY * Time.DeltaTime * 20.8f;
+        velocity -= Vector3.Up * Time.DeltaTime * 20.8f;
     }
 
     public bool IsGrounded { get; private set; }
@@ -167,6 +166,7 @@ public abstract class Entity
         else
             position.Z = newZ;
     }
+
     public void Destroy()
     {
         World? world = GetWorld();

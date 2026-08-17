@@ -1,5 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
+using Shared.Mathf;
+using Matrix4 = OpenTK.Mathematics.Matrix4;
 
 namespace Client.Rendering;
 
@@ -42,23 +43,23 @@ public class Shadow
         if (!ShadowsEnabled)
             return;
 
-        Vector3 sunDirection = new Vector3(-0.4f, -1, -0.4f).Normalized();
+        Vector3 sunDirection = new Vector3(-0.4f, -1, -0.4f).Normalized;
 
         Vector3 sunPosition = Camera.Position + (-sunDirection * 100.0f);
 
         float orthoSize = 30.0f;
         Matrix4 lightProjection = Matrix4.CreateOrthographicOffCenter(-orthoSize, orthoSize, -orthoSize, orthoSize, 0.1f, 200.0f);
 
-        Vector3 lightRight = Vector3.Cross(sunDirection, Vector3.UnitY).Normalized();
+        Vector3 lightRight = Vector3.Cross(sunDirection, Vector3.Up).Normalized;
 
         if (lightRight.LengthSquared < 0.001f)
         {
-            lightRight = Vector3.UnitX;
+            lightRight = Vector3.Right;
         }
 
-        Vector3 lightUp = Vector3.Cross(lightRight, sunDirection).Normalized();
+        Vector3 lightUp = Vector3.Cross(lightRight, sunDirection).Normalized;
 
-        Matrix4 lightView = Matrix4.LookAt(sunPosition, Camera.Position, lightUp);
+        Matrix4 lightView = Matrix4.LookAt(sunPosition.ToOpenTK(), Camera.Position.ToOpenTK(), lightUp.ToOpenTK());
 
         lightSpaceMatrix = lightView * lightProjection;
 

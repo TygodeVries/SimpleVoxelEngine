@@ -1,4 +1,4 @@
-﻿using OpenTK.Mathematics;
+﻿using Shared.Mathf;
 
 namespace Client.Input;
 

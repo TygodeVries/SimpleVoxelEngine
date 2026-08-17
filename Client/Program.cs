@@ -28,6 +28,12 @@ public class Program
 
     public static void Main(string[] args)
     {
+        DedicatedSwitch.Switch();
+
+        Console.WriteLine("#################");
+        Console.WriteLine("#     CLIENT    #");
+        Console.WriteLine("#################");
+
         if (args.Length != 0)
         {
             if (args[0] == "--multiple")
@@ -61,12 +67,10 @@ public class Program
         NativeWindowSettings nativeWindowSettings = NativeWindowSettings.Default;
 
         gameWindowSettings.UpdateFrequency = 144.0; // Max FPS
-
-        Network.Connect();
-
+        Network.Connect(true, "127.0.0.1:5050");
         LocalWorld.ListenForPackets();
 
-        nativeWindowSettings.Title = "Simple Voxel Engine";
+        nativeWindowSettings.Title = "A yet to be named game.";
         nativeWindowSettings.ClientSize = new OpenTK.Mathematics.Vector2i(1920, 1080);
 
         // Create the window object
@@ -75,9 +79,18 @@ public class Program
         // Start the program (blocks this thread until the window closes.)
         gameCanvas.Run();
 
-        // The program end here.
-        Console.WriteLine("The game has closed!");
-
-        Environment.Exit(0);
+        gameCanvas.IsVisible = false;
+        if (HasCrashed)
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("(>_<) Oops! (We detected a crash, and kept the console open. Press enter to continue)");
+            Console.ReadLine();
+        }
+        else
+        {
+            Console.WriteLine("The game has closed!");
+        }
     }
+
+    public static bool HasCrashed = false;
 }

@@ -1,8 +1,7 @@
 ﻿using Client.Rendering;
-using OpenTK.Mathematics;
 using Shared.Mathf;
 using Shared.Worlds;
-
+using Matrix4 = OpenTK.Mathematics.Matrix4;
 namespace SimpleVoxelEngine.Entities;
 
 /// <summary>
@@ -52,7 +51,7 @@ public abstract class VisibleEntity : Entity
             visualPosition = Vector3.Lerp(visualPosition, targetPosition, alpha);
         }
 
-        renderer.SetModelMatrix(Matrix4.CreateTranslation(visualPosition) * Matrix4.CreateScale(1));
+        renderer.SetModelMatrix(Matrix4.CreateTranslation(visualPosition.ToOpenTK()) * Matrix4.CreateScale(1));
     }
 
     private float Clamp(float a, float min, float max)

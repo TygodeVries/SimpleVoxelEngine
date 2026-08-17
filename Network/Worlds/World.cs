@@ -1,12 +1,50 @@
 ﻿namespace Shared.Worlds;
 
-using OpenTK.Mathematics;
+using Shared.Mathf;
 
 public class World
 {
     public World()
     {
 
+    }
+
+    public WorldGenerator WorldGenerator { get; private set; } = new DefaultWorldGenerator();
+
+    public void SetWorldGenerator(WorldGenerator worldGenerator)
+    {
+        this.WorldGenerator = worldGenerator;
+    }
+
+    public void GenerateChunk(int x, int y, int z)
+    {
+        Chunk chunk = new Chunk(x, y, z);
+        for (int bx = 0; bx < 16; bx++)
+            for (int by = 0; by < 16; by++)
+                for (int bz = 0; bz < 16; bz++)
+                {
+                    int worldX = (x * 16) + bx;
+                    int worldY = (y * 16) + by;
+                    int worldZ = (z * 16) + bz;
+                    chunk.SetBlock(WorldGenerator.Generate(worldX, worldY, worldZ), bx, by, bz);
+                }
+
+        chunk.isDirty = true;
+
+        AddChunk(chunk);
+    }
+
+    public Chunk GetOrGenerateChunkAt(int x, int y, int z)
+    {
+        if (chunks.TryGetValue((x, y, z), out Chunk chunk))
+        {
+            return chunk;
+        }
+        else
+        {
+            GenerateChunk(x, y, z);
+            return chunks[(x, y, z)];
+        }
     }
 
     private List<Entity> entities = new List<Entity>();
@@ -75,7 +113,7 @@ public class World
     public RaycastHit? Raycast(Vector3 position, Vector3 direction, float maxDistance = 5)
     {
         Vector3 pointer = position;
-        Vector3i lastVoxel = (Vector3i)pointer.Floor();
+        Vector3 lastVoxel = pointer.Floor();
 
         while (Vector3.Distance(pointer, position) < maxDistance)
         {
@@ -91,29 +129,29 @@ public class World
             int blockY = Mod(voxelY, 16);
             int blockZ = Mod(voxelZ, 16);
 
-            Vector3i currentVoxel = new Vector3i(voxelX, voxelY, voxelZ);
+            Vector3 currentVoxel = new Vector3(voxelX, voxelY, voxelZ);
 
             if (chunks.TryGetValue((chunkX, chunkY, chunkZ), out Chunk? chunk) && chunk != null)
             {
                 short block = chunk.GetBlock(blockX, blockY, blockZ);
                 if (!BlockData.IsInvisible(block))
                 {
-                    Vector3i delta = currentVoxel - lastVoxel;
-                    Vector3i normal = new Vector3i(-delta.X, -delta.Y, -delta.Z);
+                    Vector3 delta = currentVoxel - lastVoxel;
+                    Vector3 normal = new Vector3(-delta.X, -delta.Y, -delta.Z);
 
                     if (normal.EuclideanLengthSquared > 1)
                     {
                         if (MathF.Abs(delta.X) >= MathF.Abs(delta.Y) && MathF.Abs(delta.X) >= MathF.Abs(delta.Z))
-                            normal = new Vector3i(-MathF.Sign(delta.X), 0, 0);
+                            normal = new Vector3(-MathF.Sign(delta.X), 0, 0);
                         else if (MathF.Abs(delta.Y) >= MathF.Abs(delta.X) && MathF.Abs(delta.Y) >= MathF.Abs(delta.Z))
-                            normal = new Vector3i(0, -MathF.Sign(delta.Y), 0);
+                            normal = new Vector3(0, -MathF.Sign(delta.Y), 0);
                         else
-                            normal = new Vector3i(0, 0, -MathF.Sign(delta.Z));
+                            normal = new Vector3(0, 0, -MathF.Sign(delta.Z));
                     }
 
                     return new RaycastHit(
                         chunk,
-                        new Vector3i(blockX, blockY, blockZ),
+                        new Vector3(blockX, blockY, blockZ),
                         currentVoxel,
                         normal,
                         block
@@ -132,11 +170,29 @@ public class World
 
     public void AddChunk(Chunk chunk)
     {
-        chunks.Add((chunk.X, chunk.Y, chunk.Z), chunk);
-        OnAddChunk.Invoke(chunk);
+        var cords = (chunk.X, chunk.Y, chunk.Z);
+        if (chunks.ContainsKey(cords))
+        {
+            Console.WriteLine("Chunk already loaded!? #TODO");
+            chunks[cords] = chunk;
+            return;
+        }
+        else
+        {
+            chunks.Add(cords, chunk);
+        }
+        OnAddChunk?.Invoke(chunk);
     }
 
     public event Action<Chunk>? OnAddChunk;
+    public event Action<Chunk>? OnRemoveChunk;
+
+    public void RemoveChunk(Chunk chunk)
+    {
+        var cords = (chunk.X, chunk.Y, chunk.Z);
+        chunks.Remove(cords);
+        OnRemoveChunk?.Invoke(chunk);
+    }
 
     public short GetBlockAt(int x, int y, int z)
     {
@@ -214,17 +270,17 @@ public class World
         }
     }
 
-    public void FillSquare(short type, Vector3i center, Vector3i size)
+    public void FillSquare(short type, Vector3 center, Vector3 size)
     {
-        int halfX = size.X / 2;
-        int halfY = size.Y / 2;
-        int halfZ = size.Z / 2;
+        int halfX = size.iX / 2;
+        int halfY = size.iY / 2;
+        int halfZ = size.iZ / 2;
 
-        for (int x = center.X - halfX; x <= center.X + halfX; x++)
+        for (int x = center.iX - halfX; x <= center.X + halfX; x++)
         {
-            for (int y = center.Y - halfY; y <= center.Y + halfY; y++)
+            for (int y = center.iY - halfY; y <= center.Y + halfY; y++)
             {
-                for (int z = center.Z - halfZ; z <= center.Z + halfZ; z++)
+                for (int z = center.iZ - halfZ; z <= center.Z + halfZ; z++)
                 {
                     SetBlockAt(type, x, y, z);
                 }
@@ -232,16 +288,16 @@ public class World
         }
     }
 
-    public void FillSphere(short type, Vector3i center, float radius)
+    public void FillSphere(short type, Vector3 center, float radius)
     {
         int r = (int)MathF.Ceiling(radius);
         float radiusSquared = radius * radius;
 
-        for (int x = center.X - r; x <= center.X + r; x++)
+        for (int x = center.iX - r; x <= center.X + r; x++)
         {
-            for (int y = center.Y - r; y <= center.Y + r; y++)
+            for (int y = center.iY - r; y <= center.Y + r; y++)
             {
-                for (int z = center.Z - r; z <= center.Z + r; z++)
+                for (int z = center.iZ - r; z <= center.Z + r; z++)
                 {
                     float dx = x - center.X;
                     float dy = y - center.Y;
@@ -256,7 +312,7 @@ public class World
         }
     }
 
-    public void FillLine(short type, Vector3i start, Vector3i end, int radius)
+    public void FillLine(short type, Vector3 start, Vector3 end, int radius)
     {
         Vector3 delta = new Vector3(
             end.X - start.X,
@@ -284,7 +340,7 @@ public class World
 
             FillSphere(
                 type,
-                new Vector3i(
+                new Vector3(
                     (int)MathF.Round(pos.X),
                     (int)MathF.Round(pos.Y),
                     (int)MathF.Round(pos.Z)),

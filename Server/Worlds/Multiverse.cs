@@ -11,33 +11,9 @@ public class Multiverse
         return world;
     }
 
-    public static void Start()
+    internal static void Start()
     {
         world.OnBlockPlace += World_OnBlockPlace;
-        world.OnAddChunk += World_OnAddChunk;
-
-
-        for (int x = -3; x <= 3; x++)
-        {
-            for (int y = -3; y <= 3; y++)
-            {
-                for (int z = -3; z <= 3; z++)
-                {
-                    Chunk chunk = new Chunk(x, y, z);
-                    if (y < 0)
-                    {
-                        chunk.Fill(1);
-                    }
-                    world.AddChunk(chunk);
-                }
-            }
-        }
-    }
-
-    private static void World_OnAddChunk(Chunk chunk)
-    {
-        ChunkDataPacket chunkDataPacket = new ChunkDataPacket(chunk);
-        Program.server.BroadcastPacket(chunkDataPacket.Write());
     }
 
     private static void World_OnBlockPlace((short type, int x, int y, int z) obj)
@@ -51,12 +27,12 @@ public class Multiverse
         Program.server.BroadcastPacket(packet.Write());
     }
 
-    public static void TickWorlds()
+    internal static void TickWorlds()
     {
         world.Tick();
     }
 
-    public static void SendWorldData(Connection connection, World world)
+    internal static void SendWorldData(Connection connection, World world)
     {
         foreach (Entity entity in world.GetEntities())
         {
@@ -76,12 +52,6 @@ public class Multiverse
 
                 connection.SendPacket(moveEntityPacket.Write());
             }
-        }
-
-        foreach (Chunk chunk in world.GetChunks())
-        {
-            ChunkDataPacket chunkDataPacket = new ChunkDataPacket(chunk);
-            connection.SendPacket(chunkDataPacket.Write());
         }
     }
 }

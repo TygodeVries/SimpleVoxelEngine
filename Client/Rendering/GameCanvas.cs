@@ -3,18 +3,23 @@
 using Client.Input;
 using Client.Networking;
 using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using Shared.Mathf;
 using System.Diagnostics;
+using Matrix4 = OpenTK.Mathematics.Matrix4;
 
 public class GameCanvas : GameWindow
 {
     public static bool DebugEnabled = false;
     public GameCanvas(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings) : base(gameWindowSettings, nativeWindowSettings)
     {
-
+        canvas = this;
+    }
+    private static GameCanvas canvas;
+    public static void ForceClose()
+    {
+        canvas.Close();
     }
 
     public static float Width;
@@ -48,13 +53,39 @@ public class GameCanvas : GameWindow
         fpsCounterStopwatch.Start();
 
         LocalWorld.World.OnAddChunk += World_OnAddChunk;
+        LocalWorld.World.OnRemoveChunk += World_OnRemoveChunk;
         GameCanvas.Width = width;
         GameCanvas.Height = height;
 
+        SwitchDedicated();
 
         AddRenderer(new UIRenderer(RenderData.UIShader));
     }
 
+    private void World_OnRemoveChunk(Shared.Worlds.Chunk obj)
+    {
+        for (int i = 0; i < renderers.Count; i++)
+        {
+            if (renderers[i] is ChunkRenderer chunkRenderer && chunkRenderer.Chunk == obj)
+            {
+                renderers.RemoveAt(i);
+                break;
+            }
+        }
+    }
+
+    private static void SwitchDedicated()
+    {
+        if (OperatingSystem.IsLinux())
+        {
+            Environment.SetEnvironmentVariable("DRI_PRIME", "1");
+        }
+
+        string vendor = GL.GetString(StringName.Vendor) ?? "Unknown";
+        string renderer = GL.GetString(StringName.Renderer) ?? "Unknown";
+
+        Console.WriteLine($"GPU: {renderer}");
+    }
     private void World_OnAddChunk(Shared.Worlds.Chunk obj)
     {
         ChunkRenderer chunkRenderer = new ChunkRenderer(obj);
@@ -77,6 +108,8 @@ public class GameCanvas : GameWindow
             Title = $"Game --- FPS: {frameCount}";
             frameCount = 0;
         }
+
+        Time.Frame++;
 
         // Clear the background
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -287,12 +320,12 @@ public class GameCanvas : GameWindow
         float yawRad = MathHelper.DegreesToRadians(yaw);
         float pitchRad = MathHelper.DegreesToRadians(pitch);
 
-        Vector3 newDirection;
+        Vector3 newDirection = new Vector3();
         newDirection.X = MathF.Cos(pitchRad) * MathF.Cos(yawRad);
         newDirection.Y = MathF.Sin(pitchRad);
         newDirection.Z = MathF.Cos(pitchRad) * MathF.Sin(yawRad);
 
-        Camera.Direction = Vector3.Normalize(newDirection);
+        Camera.Direction = newDirection.Normalized;
     }
 
     private float Clamp(float a, float min, float max)

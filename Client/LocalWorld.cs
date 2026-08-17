@@ -1,5 +1,6 @@
 ﻿using Client.Entities;
 using Client.Networking;
+using Client.Rendering;
 using Shared.Networking;
 using Shared.Worlds;
 
@@ -23,6 +24,19 @@ public class LocalWorld
     private static int localPlayerId = -1;
     private static void OnPacket(Shared.Networking.Packet packet)
     {
+        if (packet.GetPacketType() == PacketType.Error)
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(" ----  Oopsies! Something went very wrong!  ---- ");
+            ErrorPacket errorPacket = new ErrorPacket();
+            errorPacket.Read(packet);
+
+            Console.WriteLine($"The following was reported: {errorPacket.Message}");
+            Program.HasCrashed = true;
+            GameCanvas.ForceClose();
+        }
+
         if (packet.GetPacketType() == PacketType.Authenticate)
         {
             AuthenticatePacket authenticatePacket = new AuthenticatePacket();
@@ -109,8 +123,15 @@ public class LocalWorld
 
             Chunk chunk = new Chunk(chunkDataPacket.X, chunkDataPacket.Y, chunkDataPacket.Z);
             chunk.SetByteArray(chunkDataPacket.data);
-            Console.WriteLine($"Loaded chunk including block of type {chunk.GetBlock(0, 0, 0)}");
             World.AddChunk(chunk);
+        }
+
+        if (packet.GetPacketType() == PacketType.UnloadChunk)
+        {
+            UnloadChunkPacket unloadChunkPacket = new UnloadChunkPacket();
+            unloadChunkPacket.Read(packet);
+            Chunk chunk = World.GetOrGenerateChunkAt(unloadChunkPacket.X, unloadChunkPacket.Y, unloadChunkPacket.Z);
+            World.RemoveChunk(chunk);
         }
 
         if (packet.GetPacketType() == PacketType.PlaceBlock)
