@@ -67,7 +67,44 @@ public class Program
         NativeWindowSettings nativeWindowSettings = NativeWindowSettings.Default;
 
         gameWindowSettings.UpdateFrequency = 144.0; // Max FPS
-        Network.Connect(true, "127.0.0.1:5050");
+
+        Console.WriteLine("How do you want to connect to the server?");
+
+        Console.WriteLine("[1]: Via a direct connection");
+        Console.WriteLine("[2]: Via a dreams server");
+
+
+        bool isDirect = false;
+
+        while (true)
+        {
+            string msg = Console.ReadLine();
+
+            if (msg == "1")
+            {
+                isDirect = true;
+                break;
+            }
+
+            if (msg == "2")
+            {
+                isDirect = false;
+                break;
+            }
+
+            Console.WriteLine($"I don't know what you mean with {msg}");
+        }
+
+        Console.Clear();
+        Console.WriteLine("What address do you want to connect with?");
+
+        if (isDirect)
+        {
+            Console.WriteLine("Format: [IP]:[PORT]");
+        }
+        string address = Console.ReadLine();
+
+        Network.Connect(isDirect, address);
         LocalWorld.ListenForPackets();
 
         nativeWindowSettings.Title = "A yet to be named game.";

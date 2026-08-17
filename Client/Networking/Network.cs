@@ -12,7 +12,6 @@ namespace Client.Networking
         {
             if (isTcpServer)
             {
-                Thread.Sleep(10000);
                 string[] args = address.Split(':');
                 Console.WriteLine("Connecting to server...");
                 TcpClient client = new TcpClient(args[0], int.Parse(args[1]));
