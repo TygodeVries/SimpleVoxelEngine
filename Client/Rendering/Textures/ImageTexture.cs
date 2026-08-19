@@ -34,7 +34,7 @@ public class ImageTexture : Texture
         cache.Remove(path);
     }
 
-    public static ImageTexture LoadFromPng(string path, int maxWidth = 8192, int maxHeight = 8192, bool upload = true, bool useCache = true)
+    public static ImageTexture LoadFromPng(string path, int maxWidth = 8192, int maxHeight = 8192, bool upload = true, bool useCache = true, bool flip = false)
     {
         if (cache.ContainsKey(path) && useCache)
         {
@@ -63,6 +63,11 @@ public class ImageTexture : Texture
 
             image.Mutate(x => x.Resize(newWidth, newHeight));
             Console.WriteLine($"Resized image from {image.Width}x{image.Height} to {newWidth}x{newHeight}");
+        }
+
+        if (flip)
+        {
+            image.Mutate(x => x.Flip(FlipMode.Vertical));
         }
 
         byte[] pixels = new byte[4 * image.Width * image.Height];

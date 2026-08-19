@@ -19,6 +19,7 @@ public class RenderData
     public static ShaderProgram? SingleBlockShader { get; private set; }
     public static ShaderProgram? DepthShader { get; private set; }
     public static ShaderProgram? UIShader { get; private set; }
+    public static ShaderProgram? SkyboxShader { get; private set; }
     public static void SetupDefaults()
     {
         BlockTexture = ImageTexture.LoadFromPng("Textures/Blocks.png");
@@ -42,6 +43,11 @@ public class RenderData
             File.ReadAllText("Shaders/default.vert"),
             File.ReadAllText("Shaders/single.frag"));
 
+        SkyboxShader = new ShaderProgram(
+            File.ReadAllText("Shaders/skybox.vert"),
+            File.ReadAllText("Shaders/skybox.frag"));
+
+        SkyboxShader.SetTextureId("u_Color", 0);
         SingleBlockShader.SetVector4("u_TextureInfo", new Vector4(BlockTexturesMap.row, BlockTexturesMap.col, 16, 0));
 
         DepthShader = new ShaderProgram(

@@ -14,18 +14,28 @@ public class LocalPlayer : Entity
         position = new Vector3(0.5f, 30, 0.5f);
     }
 
+    public bool isCrouch = false;
+
     public override void Tick()
     {
         ApplyGravity();
         Movement();
 
-        ApplyPhysics();
+        ApplyPhysics(isCrouch && IsGrounded);
         Break();
         Place();
 
-        Camera.Position = position + new Vector3(0, 1.7f, 0);
+        isCrouch = Keyboard.Current.IsPressed(Keys.LeftShift);
 
-        if (Vector3.Distance(lastPacketPosition, position) > 0.1f)
+        float playerHeight = 1.7f;
+
+        if (isCrouch)
+            playerHeight = 1.4f;
+
+
+        Camera.Position = position + new Vector3(0, playerHeight, 0);
+
+        if (Vector3.Distance(lastPacketPosition, position) > 0.3f)
         {
             PlayerMovePacket packet = new PlayerMovePacket();
             packet.X = position.X;
@@ -129,7 +139,12 @@ public class LocalPlayer : Entity
         Vector3 tDirection = Camera.Translate(direction);
 
         float y = velocity.Y;
-        velocity = tDirection * 4;
+
+        float speed = 4;
+        if (isCrouch)
+            speed = 2;
+
+        velocity = tDirection * speed;
         velocity.Y = y;
     }
 

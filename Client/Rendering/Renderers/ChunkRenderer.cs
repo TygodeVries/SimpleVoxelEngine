@@ -18,7 +18,7 @@ public class ChunkRenderer : Renderer
 
     public override void Render(bool isShadowPass)
     {
-        bool allowedUpdateFrame = (Time.Frame + Chunk.X) % 16 == 1;
+        bool allowedUpdateFrame = (Time.Frame + Chunk.X + (Time.Frame * 2) + Chunk.Z) % 4 == 1;
 
         if (Chunk.isDirty && !isShadowPass && allowedUpdateFrame)
         {

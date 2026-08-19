@@ -43,7 +43,7 @@ public abstract class Entity
     public void ApplyGravity()
     {
         // Subtract gravity.
-        velocity -= Vector3.Up * Time.DeltaTime * 20.8f;
+        velocity -= Vector3.Up * Time.DeltaTime * 26.8f;
     }
 
     public bool IsGrounded { get; private set; }
@@ -51,7 +51,7 @@ public abstract class Entity
     /// <summary>
     /// Taken from old project, did not want to write all this again.
     /// </summary>
-    public void ApplyPhysics()
+    public void ApplyPhysics(bool canNotFallOffBlocks)
     {
         World? world = GetWorld();
 
@@ -82,6 +82,14 @@ public abstract class Entity
                     (int)MathF.Floor(checkX),
                     y,
                     z)))
+                {
+                    hitX = true;
+                    break;
+                }
+
+                bool blockBelow = BlockData.IsSolid(GetWorld().GetBlockAt((int)MathF.Floor(checkX), (int)MathF.Floor(position.Y) - 1, z));
+
+                if (canNotFallOffBlocks && !blockBelow)
                 {
                     hitX = true;
                     break;
@@ -151,6 +159,14 @@ public abstract class Entity
                     x,
                     y,
                     (int)MathF.Floor(checkZ))))
+                {
+                    hitZ = true;
+                    break;
+                }
+
+                bool blockBelow = BlockData.IsSolid(world.GetBlockAt(x, (int)MathF.Floor(position.Y) - 1, (int)MathF.Floor(checkZ)));
+
+                if (canNotFallOffBlocks && !blockBelow)
                 {
                     hitZ = true;
                     break;

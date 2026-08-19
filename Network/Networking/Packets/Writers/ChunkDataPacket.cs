@@ -1,4 +1,5 @@
-﻿using Shared.Worlds;
+﻿using Shared.Mathf;
+using Shared.Worlds;
 
 namespace Shared.Networking;
 
@@ -16,8 +17,9 @@ public class ChunkDataPacket : PacketWriter
         packet.WriteInt(Y);
         packet.WriteInt(Z);
 
-        packet.WriteInt(data.Length);
-        packet.WriteByteArray(data);
+        byte[] compr = Compression.Compress(data);
+        packet.WriteInt(compr.Length);
+        packet.WriteByteArray(compr);
 
         return packet;
     }
@@ -29,7 +31,8 @@ public class ChunkDataPacket : PacketWriter
         Z = packet.ReadInt();
 
         int l = packet.ReadInt();
-        data = packet.ReadByteArray(l);
+        byte[] compr = packet.ReadByteArray(l);
+        data = Compression.Decompress(compr);
     }
 
     public ChunkDataPacket()

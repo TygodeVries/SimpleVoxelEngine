@@ -93,13 +93,19 @@ public class MeshRenderer : Renderer
     }
 
     public static int totalTrisCount;
-
+    public Texture? Texture { get; set; }
     public override void Render(bool isShadowPass)
     {
         if (mesh == null)
         {
             Console.WriteLine("Mesh renderer has no mesh!");
             return;
+        }
+
+        if (Texture != null)
+        {
+            shader.SetTextureId("u_Color", 0);
+            Texture?.Use(TextureUnit.Texture0);
         }
 
         GL.BindVertexArray(vao);

@@ -72,9 +72,11 @@ public class Program
 
         Console.WriteLine("[1]: Via a direct connection");
         Console.WriteLine("[2]: Via a dreams server");
+        Console.WriteLine("[3]: Localhost");
 
 
         bool isDirect = false;
+        bool isLocal = false;
 
         while (true)
         {
@@ -92,18 +94,31 @@ public class Program
                 break;
             }
 
+            if (msg == "3")
+            {
+                isLocal = true;
+                isDirect = true;
+                break;
+            }
+
             Console.WriteLine($"I don't know what you mean with {msg}");
         }
-
-        Console.Clear();
-        Console.WriteLine("What address do you want to connect with?");
-
-        if (isDirect)
+        string address;
+        if (!isLocal)
         {
-            Console.WriteLine("Format: [IP]:[PORT]");
-        }
-        string address = Console.ReadLine();
+            Console.Clear();
+            Console.WriteLine("What address do you want to connect with?");
 
+            if (isDirect)
+            {
+                Console.WriteLine("Format: [IP]:[PORT]");
+            }
+            address = Console.ReadLine();
+        }
+        else
+        {
+            address = "127.0.0.1:5050";
+        }
         Network.Connect(isDirect, address);
         LocalWorld.ListenForPackets();
 

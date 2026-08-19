@@ -141,9 +141,17 @@ public class ShaderProgram
         GL.Uniform1i(mvpLocation, id);
     }
 
+    /// <summary>
+    /// A cache so we don't have to look it up every frame.
+    /// </summary>
     private Dictionary<string, int> uniformLocations = new Dictionary<string, int>();
 
-    private int GetUniformLocation(string name)
+    /// <summary>
+    /// Get the location of the Uniform inside of the shader
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public int GetUniformLocation(string name)
     {
         Use();
         if (uniformLocations.TryGetValue(name, out int location))
@@ -152,7 +160,7 @@ public class ShaderProgram
         location = GL.GetUniformLocation(shaderProgramId, name);
         if (location == -1)
         {
-            //  Console.WriteLine($"Value '{name}' not found in shader, but you are trying to access it anyways!");
+            Console.WriteLine($"Value '{name}' not found in shader, but you are trying to access it anyways!");
         }
 
         uniformLocations[name] = location;

@@ -148,6 +148,9 @@ public class Player : ServerEntity
             chunkZ
         );
 
+        // Before sending anything, make sure its as compressed as possible!
+        chunk.Optimize();
+
         ChunkDataPacket packet = new ChunkDataPacket();
 
         packet.X = chunkX;

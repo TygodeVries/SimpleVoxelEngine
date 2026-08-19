@@ -9,7 +9,7 @@ public abstract class Renderer
     /// </summary>
     /// <param name="isShadowPass"></param>
     public abstract void Render(bool isShadowPass);
-
+    public bool enableDepth = true;
     public int sort = 0;
 
     /// <summary>

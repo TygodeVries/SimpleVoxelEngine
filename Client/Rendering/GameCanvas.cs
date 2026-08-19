@@ -60,8 +60,27 @@ public class GameCanvas : GameWindow
         SwitchDedicated();
 
         AddRenderer(new UIRenderer(RenderData.UIShader));
-    }
 
+        // Skybox
+
+        MeshRenderer skyboxRenderer = new MeshRenderer(RenderData.SkyboxShader);
+        Mesh? mesh = Mesh.FromFileObj("Models/Skybox.obj");
+        if (mesh == null)
+        {
+            Console.WriteLine("Could not load skybox model.");
+        }
+
+        skyboxRenderer.SetMesh(mesh!);
+        skyboxRenderer.enableDepth = false;
+        skyboxRenderer.sort = -10000;
+        skyboxRenderer.Texture = ImageTexture.LoadFromPng("Textures/Skybox.png", flip: true);
+        OnUpdate += () =>
+        {
+            skyboxRenderer.SetModelMatrix(Matrix4.CreateTranslation(Camera.Position.ToOpenTK()) * Matrix4.CreateScale(1));
+        };
+
+        AddRenderer(skyboxRenderer);
+    }
     private void World_OnRemoveChunk(Shared.Worlds.Chunk obj)
     {
         for (int i = 0; i < renderers.Count; i++)
@@ -94,7 +113,7 @@ public class GameCanvas : GameWindow
 
     private Stopwatch fpsCounterStopwatch = new Stopwatch();
     private int frameCount = 0;
-
+    private event Action? OnUpdate;
     protected override void OnRenderFrame(FrameEventArgs args)
     {
         // Keep track of the framerate
@@ -145,7 +164,7 @@ public class GameCanvas : GameWindow
 
             bool isUI = shader.useOrthoProjection;
 
-            if (isUI)
+            if (isUI || !renderer.enableDepth)
             {
                 GL.Disable(EnableCap.DepthTest);
             }
@@ -248,7 +267,6 @@ public class GameCanvas : GameWindow
         if ((float)args.Time < 0.1f)
             Time.DeltaTime = (float)args.Time;
 
-
         if (Keyboard.Current.IsPressedThisFrame(OpenTK.Windowing.GraphicsLibraryFramework.Keys.F7))
         {
             int currentId = Environment.ProcessId;
@@ -278,6 +296,9 @@ public class GameCanvas : GameWindow
         {
             CursorState = CursorState.Normal;
         }
+
+
+        OnUpdate?.Invoke();
 
     }
 
