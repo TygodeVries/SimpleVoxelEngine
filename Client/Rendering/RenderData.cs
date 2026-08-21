@@ -33,6 +33,7 @@ public class RenderData
     public static ShaderProgram? DepthShader { get; private set; }
     public static ShaderProgram? UIShader { get; private set; }
     public static ShaderProgram? SkyboxShader { get; private set; }
+    public static ShaderProgram? SelectionShader { get; private set; }
     public static void SetupDefaults()
     {
         BlockTexturesMap = new TextureMap(0, 0);
@@ -40,6 +41,10 @@ public class RenderData
         DefaultShader = new ShaderProgram(
             File.ReadAllText("Shaders/default.vert"),
             File.ReadAllText("Shaders/default.frag"));
+
+        SelectionShader = new ShaderProgram(
+            File.ReadAllText("Shaders/select.vert"),
+            File.ReadAllText("Shaders/select.frag"));
 
         UIShader = new ShaderProgram(
             File.ReadAllText("Shaders/ui.vert"),

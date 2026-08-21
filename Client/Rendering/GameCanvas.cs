@@ -6,6 +6,7 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using Shared.Mathf;
+using Shared.Worlds;
 using System.Diagnostics;
 using Matrix4 = OpenTK.Mathematics.Matrix4;
 
@@ -38,6 +39,10 @@ public class GameCanvas : GameWindow
         GL.Enable(EnableCap.Blend);
         GL.DepthFunc(DepthFunction.Lequal);
         GL.Enable(EnableCap.CullFace);
+
+        GL.Enable(EnableCap.LineSmooth);
+        GL.Hint(HintTarget.LineSmoothHint, HintMode.Nicest);
+
 
         // Load the default data into memory, like shaders, and setup vertex meshes on the GPU.
         RenderData.SetupDefaults();
@@ -81,6 +86,23 @@ public class GameCanvas : GameWindow
         };
 
         AddRenderer(skyboxRenderer);
+
+        LineRenderer lineRenderer = new LineRenderer(RenderData.SelectionShader);
+        lineRenderer.LoadCubeWireframe();
+
+        OnUpdate += () =>
+        {
+            RaycastHit? hit = LocalWorld.World.Raycast(Camera.Position, Camera.Direction, 5);
+            if (hit != null)
+            {
+                lineRenderer.position = hit.WorldBlockPos;
+            }
+            else
+            {
+                lineRenderer.position = Camera.Position - new Vector3(0, 10000, 0);
+            }
+        };
+        AddRenderer(lineRenderer);
     }
     private void World_OnRemoveChunk(Shared.Worlds.Chunk obj)
     {
