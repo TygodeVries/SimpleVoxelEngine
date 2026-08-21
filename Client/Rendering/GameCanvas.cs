@@ -168,9 +168,11 @@ public class GameCanvas : GameWindow
             if (isUI || !renderer.enableDepth)
             {
                 GL.Disable(EnableCap.DepthTest);
+                GL.Disable(EnableCap.CullFace);
             }
             else
             {
+                GL.Enable(EnableCap.CullFace);
                 GL.Enable(EnableCap.DepthTest);
             }
 
