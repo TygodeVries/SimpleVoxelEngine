@@ -1,5 +1,5 @@
 ﻿using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
+
 using Shared.Mathf;
 using Shared.Worlds;
 
@@ -8,10 +8,19 @@ namespace Client.Rendering;
 public class ChunkRenderer : Renderer
 {
     public Chunk Chunk { get; set; }
+    public Vector3 Center;
+    public Vector3 Size;
     public ChunkRenderer(Chunk chunk)
     {
+        Center = new Vector3(
+            (chunk.X * 16) + 8,
+            (chunk.Y * 16) + 8,
+            (chunk.Z * 16) + 8);
+
+        Size = new Vector3(16, 16, 16);
+
         this.Chunk = chunk;
-        modelMatrix = Matrix4.CreateTranslation(chunk.X * 16, chunk.Y * 16, chunk.Z * 16);
+        modelMatrix = OpenTK.Mathematics.Matrix4.CreateTranslation(chunk.X * 16, chunk.Y * 16, chunk.Z * 16);
     }
 
     private ChunkRenderType renderType = ChunkRenderType.Empty;
@@ -104,8 +113,8 @@ public class ChunkRenderer : Renderer
         return RenderData.DefaultShader;
     }
 
-    private Matrix4 modelMatrix;
-    public override Matrix4 GetModelMatrix()
+    private OpenTK.Mathematics.Matrix4 modelMatrix;
+    public override OpenTK.Mathematics.Matrix4 GetModelMatrix()
     {
         return modelMatrix;
     }

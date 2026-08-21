@@ -21,7 +21,7 @@ public class Player : ServerEntity
         Destroy();
     }
 
-    private const int ChunkLoadDistance = 3;
+    private const int ChunkLoadDistance = 5;
 
     private readonly HashSet<(int X, int Y, int Z)> loadedChunks = new();
 

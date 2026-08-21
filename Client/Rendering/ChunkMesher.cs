@@ -129,71 +129,92 @@ public class ChunkMesher
         }
     }
 
-    private static void AddFace(int x, int y, int z, Vector3i normal, short voxel)
+    private static void AddFace(
+    int x, int y, int z,
+    Vector3i normal,
+    short voxel)
     {
         BlockFace face = BlockFace.Up;
 
-        if (normal.X == 0 && normal.Y == 1 && normal.Z == 0)
+        if (normal == Vector3i.UnitY)
             face = BlockFace.Up;
-
-        if (normal.X == 0 && normal.Y == -1 && normal.Z == 0)
+        else if (normal == -Vector3i.UnitY)
             face = BlockFace.Down;
-
-        if (normal.X == 0 && normal.Y == 0 && normal.Z == 1)
+        else if (normal == Vector3i.UnitZ)
             face = BlockFace.Forward;
-
-        if (normal.X == 0 && normal.Y == 0 && normal.Z == -1)
+        else if (normal == -Vector3i.UnitZ)
             face = BlockFace.Backward;
-
-        if (normal.X == 1 && normal.Y == 0 && normal.Z == 0)
+        else if (normal == Vector3i.UnitX)
             face = BlockFace.Right;
-
-        if (normal.X == -1 && normal.Y == 0 && normal.Z == 0)
+        else if (normal == -Vector3i.UnitX)
             face = BlockFace.Left;
 
         Vector2[] uv = RenderData.BlockTexturesMap.GetBlockTexture(voxel, face);
+
         if (uv.Length == 0)
-        {
             throw new Exception("No UV found for block.");
-        }
 
-        Vector3 faceNormal = new(normal.X, normal.Y, normal.Z);
+        Vector3 n = new(normal.X, normal.Y, normal.Z);
 
-        if (normal.X != 0)
+        if (normal.X > 0)
         {
-            float nx = normal.X > 0 ? 1f : 0f;
+            Vector3 v0 = new(x + 1, y, z);
+            Vector3 v1 = new(x + 1, y + 1, z);
+            Vector3 v2 = new(x + 1, y + 1, z + 1);
+            Vector3 v3 = new(x + 1, y, z + 1);
 
-            Vector3 v0 = new(x + nx, y + 1, z);
-            Vector3 v1 = new(x + nx, y, z);
-            Vector3 v2 = new(x + nx, y, z + 1);
-            Vector3 v3 = new(x + nx, y + 1, z + 1);
-
-            AddTris(v0, v1, v2, uv[0], uv[3], uv[2], faceNormal);
-            AddTris(v2, v3, v0, uv[2], uv[1], uv[0], faceNormal);
+            AddTris(v0, v1, v2, uv[3], uv[0], uv[1], n);
+            AddTris(v2, v3, v0, uv[1], uv[2], uv[3], n);
         }
-        else if (normal.Y != 0)
+        else if (normal.X < 0)
         {
-            float ny = normal.Y > 0 ? 1f : 0f;
+            Vector3 v0 = new(x, y, z);
+            Vector3 v1 = new(x, y, z + 1);
+            Vector3 v2 = new(x, y + 1, z + 1);
+            Vector3 v3 = new(x, y + 1, z);
 
-            Vector3 v0 = new(x, y + ny, z);
-            Vector3 v1 = new(x + 1, y + ny, z);
-            Vector3 v2 = new(x + 1, y + ny, z + 1);
-            Vector3 v3 = new(x, y + ny, z + 1);
+            AddTris(v0, v1, v2, uv[3], uv[2], uv[1], n);
+            AddTris(v2, v3, v0, uv[1], uv[0], uv[3], n);
+        }
+        else if (normal.Y > 0)
+        {
+            Vector3 v0 = new(x, y + 1, z);
+            Vector3 v1 = new(x, y + 1, z + 1);
+            Vector3 v2 = new(x + 1, y + 1, z + 1);
+            Vector3 v3 = new(x + 1, y + 1, z);
 
-            AddTris(v0, v1, v2, uv[0], uv[1], uv[2], faceNormal);
-            AddTris(v2, v3, v0, uv[2], uv[3], uv[0], faceNormal);
+            AddTris(v0, v1, v2, uv[0], uv[3], uv[2], n);
+            AddTris(v2, v3, v0, uv[2], uv[1], uv[0], n);
+        }
+        else if (normal.Y < 0)
+        {
+            Vector3 v0 = new(x, y, z);
+            Vector3 v1 = new(x + 1, y, z);
+            Vector3 v2 = new(x + 1, y, z + 1);
+            Vector3 v3 = new(x, y, z + 1);
+
+            AddTris(v0, v1, v2, uv[0], uv[1], uv[2], n);
+            AddTris(v2, v3, v0, uv[2], uv[3], uv[0], n);
+        }
+        else if (normal.Z > 0)
+        {
+            Vector3 v0 = new(x, y, z + 1);
+            Vector3 v1 = new(x + 1, y, z + 1);
+            Vector3 v2 = new(x + 1, y + 1, z + 1);
+            Vector3 v3 = new(x, y + 1, z + 1);
+
+            AddTris(v0, v1, v2, uv[3], uv[2], uv[1], n);
+            AddTris(v2, v3, v0, uv[1], uv[0], uv[3], n);
         }
         else
         {
-            float nz = normal.Z > 0 ? 1f : 0f;
+            Vector3 v0 = new(x, y, z);
+            Vector3 v1 = new(x, y + 1, z);
+            Vector3 v2 = new(x + 1, y + 1, z);
+            Vector3 v3 = new(x + 1, y, z);
 
-            Vector3 v0 = new(x, y + 1, z + nz);
-            Vector3 v1 = new(x + 1, y + 1, z + nz);
-            Vector3 v2 = new(x + 1, y, z + nz);
-            Vector3 v3 = new(x, y, z + nz);
-
-            AddTris(v0, v1, v2, uv[0], uv[1], uv[2], faceNormal);
-            AddTris(v2, v3, v0, uv[2], uv[3], uv[0], faceNormal);
+            AddTris(v0, v1, v2, uv[3], uv[0], uv[1], n);
+            AddTris(v2, v3, v0, uv[1], uv[2], uv[3], n);
         }
     }
 

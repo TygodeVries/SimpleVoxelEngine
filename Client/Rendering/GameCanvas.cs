@@ -37,6 +37,7 @@ public class GameCanvas : GameWindow
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.Blend);
         GL.DepthFunc(DepthFunction.Lequal);
+        GL.Enable(EnableCap.CullFace);
 
         // Load the default data into memory, like shaders, and setup vertex meshes on the GPU.
         RenderData.SetupDefaults();
