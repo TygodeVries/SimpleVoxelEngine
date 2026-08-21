@@ -15,15 +15,46 @@ public class LocalWorld
         World = new World();
     }
 
+    public static void Regenerate()
+    {
+        foreach (Chunk chunk in World.GetChunks())
+        {
+            chunk.isDirty = true;
+        }
+    }
+
     public static void ListenForPackets()
     {
         Network.OnPacket += OnPacket;
+
+        Registry.OnBlockRegister += Registry_OnBlockRegister;
     }
 
+    private static void Registry_OnBlockRegister(Block obj)
+    {
+        BlockTexture? blockTexture = obj.texture;
+        if (blockTexture == null)
+            return;
+
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Up, obj.id, BlockFace.Up);
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Down, obj.id, BlockFace.Down);
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Left, obj.id, BlockFace.Left);
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Right, obj.id, BlockFace.Right);
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Forward, obj.id, BlockFace.Forward);
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Backward, obj.id, BlockFace.Backward);
+    }
 
     private static int localPlayerId = -1;
     private static void OnPacket(Shared.Networking.Packet packet)
     {
+        if (packet.GetPacketType() == PacketType.BlockData)
+        {
+            BlockDataPacket blockData = new BlockDataPacket();
+            blockData.Read(packet);
+
+            Registry.LoadAll(blockData.BlockData);
+        }
+
         if (packet.GetPacketType() == PacketType.Error)
         {
             Console.Clear();
@@ -139,7 +170,18 @@ public class LocalWorld
             PlaceBlockPacket placeBlockPacket = new PlaceBlockPacket();
             placeBlockPacket.Read(packet);
 
-            World.SetBlockAt(placeBlockPacket.Type, placeBlockPacket.X, placeBlockPacket.Y, placeBlockPacket.Z);
+            Block? block = Registry.GetBlock(placeBlockPacket.Type);
+            if (block == null)
+                throw new Exception($"Invalid block type send by server. We don't know what {placeBlockPacket.Type} is!!");
+            World.SetBlockAt(block, placeBlockPacket.X, placeBlockPacket.Y, placeBlockPacket.Z);
+        }
+
+        if (packet.GetPacketType() == PacketType.Texturepack)
+        {
+            TexturepackPacket texturepackPacket = new TexturepackPacket();
+            texturepackPacket.Read(packet);
+            BlockTextureAtlas.textureNames = texturepackPacket.names;
+            RenderData.SetBlockTexture(ImageTexture.LoadFromBytes(texturepackPacket.textureData));
         }
     }
 }

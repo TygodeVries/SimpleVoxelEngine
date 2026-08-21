@@ -1,4 +1,5 @@
 ﻿using OpenTK.Mathematics;
+using Shared.Worlds;
 
 namespace Client.Rendering;
 
@@ -35,21 +36,21 @@ public class TextureMap
         col = height / blockHeight;
     }
 
-    private readonly Dictionary<(short blockType, BlockFace face), Vector2[]> _uvMappings = new();
+    private readonly Dictionary<(int textureId, BlockFace face), Vector2[]> _uvMappings = new();
 
-    public void AddMapping(short textureId, short blockType, BlockFace face)
+    public void AddMapping(int textureId, short blockType, BlockFace face)
     {
         _uvMappings[(blockType, face)] = GetUV(textureId);
     }
 
-    public Vector2[] GetBlockTexture(short blockType, BlockFace face)
+    public Vector2[] GetBlockTexture(int textureId, BlockFace face)
     {
-        return _uvMappings.TryGetValue((blockType, face), out var uv)
+        return _uvMappings.TryGetValue((textureId, face), out var uv)
             ? uv
             : new Vector2[0];
     }
 
-    public Vector2[] GetUV(short textureId)
+    public Vector2[] GetUV(int textureId)
     {
         int texX = textureId % row;
         int texY = textureId / row;
@@ -68,11 +69,4 @@ public class TextureMap
         new Vector2(uvXmin, uvYmax)
     };
     }
-}
-
-public enum BlockFace
-{
-    Up,
-    Down,
-    Side
 }

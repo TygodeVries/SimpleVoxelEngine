@@ -26,7 +26,8 @@ public class World
                     int worldX = (x * 16) + bx;
                     int worldY = (y * 16) + by;
                     int worldZ = (z * 16) + bz;
-                    chunk.SetBlock(WorldGenerator.Generate(worldX, worldY, worldZ), bx, by, bz);
+                    Block? block = WorldGenerator.Generate(worldX, worldY, worldZ);
+                    chunk.SetBlock(block.id, bx, by, bz);
                 }
 
         chunk.isDirty = true;
@@ -42,8 +43,16 @@ public class World
         }
         else
         {
-            GenerateChunk(x, y, z);
-            return chunks[(x, y, z)];
+            if (WorldGenerator != null)
+            {
+
+                GenerateChunk(x, y, z);
+                return chunks[(x, y, z)];
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 
@@ -133,8 +142,9 @@ public class World
 
             if (chunks.TryGetValue((chunkX, chunkY, chunkZ), out Chunk? chunk) && chunk != null)
             {
-                short block = chunk.GetBlock(blockX, blockY, blockZ);
-                if (!BlockData.IsInvisible(block))
+                short blockId = chunk.GetBlock(blockX, blockY, blockZ);
+                Block? block = Registry.GetBlock(blockId);
+                if (block != null && block.isVisible)
                 {
                     Vector3 delta = currentVoxel - lastVoxel;
                     Vector3 normal = new Vector3(-delta.X, -delta.Y, -delta.Z);
@@ -194,7 +204,7 @@ public class World
         OnRemoveChunk?.Invoke(chunk);
     }
 
-    public short GetBlockAt(int x, int y, int z)
+    public Block GetBlockAt(int x, int y, int z)
     {
         int chunkX = FloorDiv(x, 16);
         int chunkY = FloorDiv(y, 16);
@@ -207,13 +217,13 @@ public class World
         if (chunks.TryGetValue((chunkX, chunkY, chunkZ), out Chunk? chunk))
         {
             if (chunk == null)
-                return 0;
+                return DefaultBlocks.AIR;
 
-            return chunk.GetBlock(blockX, blockY, blockZ);
+            return Registry.GetBlock(chunk.GetBlock(blockX, blockY, blockZ));
         }
         else
         {
-            return 0;
+            return DefaultBlocks.AIR;
         }
     }
 
@@ -228,8 +238,17 @@ public class World
         return ((a % b) + b) % b;
     }
 
-    public event Action<(short type, int x, int y, int z)>? OnBlockPlace;
-    public void SetBlockAt(short block, int x, int y, int z)
+    public event Action<(Block block, int x, int y, int z)>? OnBlockPlace;
+
+    public void BreakBlock(int x, int y, int z)
+    {
+        Block airBlock = Registry.GetBlock("air");
+        Block currentBlock = GetBlockAt(x, y, z);
+        SetBlockAt(airBlock, x, y, z);
+        currentBlock.TriggerBlockBreak(new ActionArguments.BlockBrokenArgs(new Vector3(x, y, z)));
+    }
+
+    public void SetBlockAt(Block block, int x, int y, int z)
     {
         OnBlockPlace?.Invoke((block, x, y, z));
 
@@ -241,11 +260,11 @@ public class World
         int blockY = Mod(y, 16);
         int blockZ = Mod(z, 16);
 
-        var targetKey = (chunkX, chunkY, chunkZ);
-        if (chunks.TryGetValue(targetKey, out Chunk? targetChunk) && targetChunk != null)
+        Chunk chunk = GetOrGenerateChunkAt(chunkX, chunkY, chunkZ);
+        if (chunk != null)
         {
-            targetChunk.SetBlock(block, blockX, blockY, blockZ);
-            targetChunk.isDirty = true;
+            chunk.SetBlock(block.id, blockX, blockY, blockZ);
+            chunk.isDirty = true;
         }
         else
         {
@@ -270,7 +289,7 @@ public class World
         }
     }
 
-    public void FillSquare(short type, Vector3 center, Vector3 size)
+    public void FillSquare(Block type, Vector3 center, Vector3 size)
     {
         int halfX = size.iX / 2;
         int halfY = size.iY / 2;
@@ -288,7 +307,7 @@ public class World
         }
     }
 
-    public void FillSphere(short type, Vector3 center, float radius)
+    public void FillSphere(Block type, Vector3 center, float radius)
     {
         int r = (int)MathF.Ceiling(radius);
         float radiusSquared = radius * radius;
@@ -312,7 +331,7 @@ public class World
         }
     }
 
-    public void FillLine(short type, Vector3 start, Vector3 end, int radius)
+    public void FillLine(Block type, Vector3 start, Vector3 end, int radius)
     {
         Vector3 delta = new Vector3(
             end.X - start.X,

@@ -55,7 +55,7 @@ namespace Client.Networking
 
         public static void Tick()
         {
-            connection?.ReadPackets(100);
+            connection?.ReadPackets(5000);
         }
 
         public static void SendPacket(Packet packet)

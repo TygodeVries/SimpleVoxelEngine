@@ -34,20 +34,9 @@ public class ImageTexture : Texture
         cache.Remove(path);
     }
 
-    public static ImageTexture LoadFromPng(string path, int maxWidth = 8192, int maxHeight = 8192, bool upload = true, bool useCache = true, bool flip = false)
+    public static ImageTexture LoadFromBytes(byte[] bytes, int maxWidth = 8192, int maxHeight = 8192, bool upload = true, bool useCache = true, bool flip = false)
     {
-        if (cache.ContainsKey(path) && useCache)
-        {
-            return cache[path];
-        }
-
-        if (!File.Exists(path))
-        {
-            Console.WriteLine($"Failed to load image from path {path}. File does not exist!");
-            return null;
-        }
-
-        Image<Rgba32> image = Image.Load<Rgba32>(path);
+        Image<Rgba32> image = Image.Load<Rgba32>(bytes);
 
         int newWidth = image.Width;
         int newHeight = image.Height;
@@ -77,9 +66,26 @@ public class ImageTexture : Texture
         ImageTexture texture = new ImageTexture(image.Width, image.Height, pixels);
         if (upload) texture.Upload();
 
-        if (useCache)
-            cache.Add(path, texture);
         return texture;
+    }
+
+    public static ImageTexture LoadFromPng(string path, int maxWidth = 8192, int maxHeight = 8192, bool upload = true, bool useCache = true, bool flip = false)
+    {
+        if (cache.ContainsKey(path) && useCache)
+        {
+            return cache[path];
+        }
+
+        if (!File.Exists(path))
+        {
+            Console.WriteLine($"Failed to load image from path {path}. File does not exist!");
+            return null;
+        }
+
+        byte[] fa = File.ReadAllBytes(path);
+
+        return LoadFromBytes(fa, maxWidth, maxHeight, upload, useCache, flip);
+
     }
 
     public void Upload()

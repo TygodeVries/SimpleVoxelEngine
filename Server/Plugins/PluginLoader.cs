@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Shared.Worlds;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 
@@ -6,6 +7,7 @@ namespace Server.Plugins;
 
 public class PluginLoader
 {
+    public static TextureBuilder blockTextureBuilder = new TextureBuilder();
     internal static void LoadAllPlugins()
     {
         Stopwatch sw = Stopwatch.StartNew();
@@ -81,6 +83,18 @@ public class PluginLoader
             Console.WriteLine($"No source directory was found (expected {sourceDataPath}).");
         }
 
+        string assetsData = $"{pluginPath}/Textures";
+
+        if (Directory.Exists(assetsData))
+        {
+            Console.WriteLine("Found textures in this plugin!");
+            LoadTextures(assetsData);
+        }
+        else
+        {
+            Console.WriteLine($"No textures directory was found (expected {assetsData}).");
+        }
+
         return true;
     }
 
@@ -103,6 +117,43 @@ public class PluginLoader
 
                 plugin.OnLoad();
             }
+        }
+    }
+
+    internal static void RegisterAll()
+    {
+        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            foreach (Type type in assembly.GetTypes())
+            {
+                if (type.IsAbstract)
+                    continue;
+
+                if (!typeof(Plugin).IsAssignableFrom(type))
+                    continue;
+
+                Plugin? plugin = Activator.CreateInstance(type) as Plugin;
+
+                if (plugin == null)
+                    continue;
+
+                plugin.OnRegister();
+            }
+        }
+    }
+
+    private static void LoadTextures(string path)
+    {
+        string blockTexturePath = $"{path}/Blocks";
+        string[] files = Directory.GetFiles(blockTexturePath);
+        Console.WriteLine($"Loading {files.Length} block textures for this plugin from {path}/Blocks...");
+
+        foreach (string file in files)
+        {
+            blockTextureBuilder.AddTexture(file);
+            string name = Path.GetFileNameWithoutExtension(file);
+            BlockTextureAtlas.textureNames.Add(name);
+            Console.WriteLine($"Loaded block texture {name}!");
         }
     }
 

@@ -1,5 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
+using Shared.Worlds;
 
 namespace Client.Rendering;
 
@@ -13,6 +14,18 @@ public class RenderData
 
 
     public static Texture? BlockTexture { get; private set; }
+
+    public static void SetBlockTexture(Texture texture)
+    {
+        BlockTexture = texture;
+
+        BlockTexturesMap = new TextureMap((ImageTexture)BlockTexture);
+
+        Console.WriteLine($"Block texture of {((ImageTexture)BlockTexture).width}x{((ImageTexture)BlockTexture).height} loaded!");
+
+        LocalWorld.Regenerate();
+    }
+
     public static TextureMap? BlockTexturesMap { get; private set; }
 
     public static ShaderProgram? DefaultShader { get; private set; }
@@ -22,14 +35,7 @@ public class RenderData
     public static ShaderProgram? SkyboxShader { get; private set; }
     public static void SetupDefaults()
     {
-        BlockTexture = ImageTexture.LoadFromPng("Textures/Blocks.png");
-
-        BlockTexturesMap = new TextureMap((ImageTexture)BlockTexture);
-
-        BlockTexturesMap.AddMapping(1, 1, BlockFace.Up);
-        BlockTexturesMap.AddMapping(2, 1, BlockFace.Side);
-        BlockTexturesMap.AddMapping(3, 1, BlockFace.Down);
-
+        BlockTexturesMap = new TextureMap(0, 0);
 
         DefaultShader = new ShaderProgram(
             File.ReadAllText("Shaders/default.vert"),

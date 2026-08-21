@@ -2,6 +2,7 @@
 using Server.Plugins;
 using Server.Worlds;
 using Shared.Networking;
+using Shared.Worlds;
 using System.Diagnostics;
 public class Program
 {
@@ -10,6 +11,10 @@ public class Program
     public static void Main()
     {
         PluginLoader.LoadAllPlugins();
+        Registry.InRegistryStage = true;
+        DefaultBlocks.Register();
+        PluginLoader.RegisterAll();
+        Registry.InRegistryStage = false;
 
         Console.WriteLine("--- Loading Server ---");
 

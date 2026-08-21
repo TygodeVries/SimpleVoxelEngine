@@ -1,6 +1,8 @@
-﻿using Server.Worlds;
+﻿using Server.Plugins;
+using Server.Worlds;
 using Shared;
 using Shared.Networking;
+using Shared.Worlds;
 using System.Net.Sockets;
 
 namespace Server.Networking;
@@ -107,6 +109,20 @@ public class ServerNetwork
 
     public void CatchupConnection(Connection connection)
     {
+        // First send the textures
+        TexturepackPacket texturepackPacket = new TexturepackPacket();
+        texturepackPacket.textureType = TextureType.BLOCKS;
+        texturepackPacket.names = BlockTextureAtlas.textureNames;
+        texturepackPacket.textureResolution = PluginLoader.blockTextureBuilder.TextureResolution;
+        texturepackPacket.textureData = PluginLoader.blockTextureBuilder.GetTexture();
+        connection.SendPacket(texturepackPacket.Write());
+
+        // THEN the blocks second.
+        BlockDataPacket blockDataPacket = new BlockDataPacket();
+        blockDataPacket.BlockData = Registry.SaveAll(); // #TODO cache this!
+        connection.SendPacket(blockDataPacket.Write());
+
+
         OnConnect?.Invoke(connection);
 
         Player player = new Player(connection);
@@ -144,7 +160,7 @@ public class ServerNetwork
 
         foreach (Connection connection in connections)
         {
-            connection.ReadPackets(100);
+            connection.ReadPackets(5000);
         }
 
         foreach (Connection connection in futureConnections)

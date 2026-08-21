@@ -16,13 +16,13 @@ public class Multiverse
         world.OnBlockPlace += World_OnBlockPlace;
     }
 
-    private static void World_OnBlockPlace((short type, int x, int y, int z) obj)
+    private static void World_OnBlockPlace((Block block, int x, int y, int z) obj)
     {
         PlaceBlockPacket packet = new PlaceBlockPacket();
         packet.X = obj.x;
         packet.Y = obj.y;
         packet.Z = obj.z;
-        packet.Type = obj.type;
+        packet.Type = obj.block.id;
 
         Program.server.BroadcastPacket(packet.Write());
     }

@@ -40,7 +40,8 @@ public class ChunkRenderer : Renderer
         if (Chunk.GetChunkType() == Chunk.ChunkType.Single)
         {
             short blockType = Chunk.GetBlock(0, 0, 0);
-            if (BlockData.IsInvisible(blockType))
+            Block block = Registry.GetBlock(blockType);
+            if (block == null || !block.isVisible)
             {
                 renderType = ChunkRenderType.Empty;
                 return;

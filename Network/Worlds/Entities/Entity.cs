@@ -78,21 +78,52 @@ public abstract class Entity
         {
             for (int z = (int)MathF.Floor(position.Z - half.Z); z <= (int)MathF.Floor(position.Z + half.Z); z++)
             {
-                if (BlockData.IsSolid(GetWorld().GetBlockAt(
+                Block? block = GetWorld().GetBlockAt(
                     (int)MathF.Floor(checkX),
                     y,
-                    z)))
+                    z);
+
+                if (block == null || block.isSolid)
                 {
                     hitX = true;
                     break;
                 }
 
-                bool blockBelow = BlockData.IsSolid(GetWorld().GetBlockAt((int)MathF.Floor(checkX), (int)MathF.Floor(position.Y) - 1, z));
-
-                if (canNotFallOffBlocks && !blockBelow)
+                if (canNotFallOffBlocks)
                 {
-                    hitX = true;
-                    break;
+                    bool hasSupport = false;
+
+                    int minX = (int)MathF.Floor(newX - half.X);
+                    int maxX = (int)MathF.Floor(newX + half.X - 0.001f);
+
+                    int minZ = (int)MathF.Floor(position.Z - half.Z);
+                    int maxZ = (int)MathF.Floor(position.Z + half.Z - 0.001f);
+
+                    for (int supportX = minX; supportX <= maxX; supportX++)
+                    {
+                        for (int supportZ = minZ; supportZ <= maxZ; supportZ++)
+                        {
+                            Block? blockB = world.GetBlockAt(
+                                supportX,
+                                (int)MathF.Floor(position.Y) - 1,
+                                supportZ);
+
+                            if (blockB == null || blockB.isSolid)
+                            {
+                                hasSupport = true;
+                                break;
+                            }
+                        }
+
+                        if (hasSupport)
+                            break;
+                    }
+
+                    if (!hasSupport)
+                    {
+                        hitX = true;
+                        break;
+                    }
                 }
             }
 
@@ -118,10 +149,12 @@ public abstract class Entity
         {
             for (int z = (int)MathF.Floor(position.Z - half.Z); z <= (int)MathF.Floor(position.Z + half.Z); z++)
             {
-                if (BlockData.IsSolid(world.GetBlockAt(
+                Block? block = world.GetBlockAt(
                     x,
                     (int)MathF.Floor(checkY),
-                    z)))
+                    z);
+
+                if (block == null || block.isSolid)
                 {
                     hitY = true;
                     break;
@@ -155,21 +188,52 @@ public abstract class Entity
         {
             for (int x = (int)MathF.Floor(position.X - half.X); x <= (int)MathF.Floor(position.X + half.X); x++)
             {
-                if (BlockData.IsSolid(world.GetBlockAt(
+                Block? block = world.GetBlockAt(
                     x,
                     y,
-                    (int)MathF.Floor(checkZ))))
+                    (int)MathF.Floor(checkZ));
+
+                if (block == null || block.isSolid)
                 {
                     hitZ = true;
                     break;
                 }
 
-                bool blockBelow = BlockData.IsSolid(world.GetBlockAt(x, (int)MathF.Floor(position.Y) - 1, (int)MathF.Floor(checkZ)));
-
-                if (canNotFallOffBlocks && !blockBelow)
+                if (canNotFallOffBlocks)
                 {
-                    hitZ = true;
-                    break;
+                    bool hasSupport = false;
+
+                    int minX = (int)MathF.Floor(position.X - half.X);
+                    int maxX = (int)MathF.Floor(position.X + half.X - 0.001f);
+
+                    int minZ = (int)MathF.Floor(newZ - half.Z);
+                    int maxZ = (int)MathF.Floor(newZ + half.Z - 0.001f);
+
+                    for (int supportX = minX; supportX <= maxX; supportX++)
+                    {
+                        for (int supportZ = minZ; supportZ <= maxZ; supportZ++)
+                        {
+                            Block? blockB = world.GetBlockAt(
+                                supportX,
+                                (int)MathF.Floor(position.Y) - 1,
+                                supportZ);
+
+                            if (blockB == null || blockB.isSolid)
+                            {
+                                hasSupport = true;
+                                break;
+                            }
+                        }
+
+                        if (hasSupport)
+                            break;
+                    }
+
+                    if (!hasSupport)
+                    {
+                        hitZ = true;
+                        break;
+                    }
                 }
             }
 

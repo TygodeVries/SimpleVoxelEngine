@@ -2,5 +2,5 @@
 
 public abstract class WorldGenerator
 {
-    public abstract short Generate(int x, int y, int z);
+    public abstract Block Generate(int x, int y, int z);
 }

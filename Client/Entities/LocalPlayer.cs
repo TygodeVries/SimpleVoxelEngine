@@ -54,7 +54,9 @@ public class LocalPlayer : Entity
             if (hit == null)
                 return;
 
-            LocalWorld.World.SetBlockAt(0, hit.WorldBlockPos.iX, hit.WorldBlockPos.iY, hit.WorldBlockPos.iZ);
+            Block airBlock = Registry.GetBlock("air");
+
+            LocalWorld.World.SetBlockAt(airBlock, hit.WorldBlockPos.iX, hit.WorldBlockPos.iY, hit.WorldBlockPos.iZ);
 
 
             PlaceBlockPacket packet = new PlaceBlockPacket();
@@ -78,7 +80,7 @@ public class LocalPlayer : Entity
 
             Vector3 pos = hit.WorldBlockPos + hit.Normal;
 
-            LocalWorld.World.SetBlockAt(1, (int)pos.X, (int)pos.Y, (int)pos.Z);
+            //LocalWorld.World.SetBlockAt(DefaultBlocks.GRASS, (int)pos.X, (int)pos.Y, (int)pos.Z);
 
             PlaceBlockPacket packet = new PlaceBlockPacket();
             packet.X = (int)pos.X;

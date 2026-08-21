@@ -47,7 +47,22 @@ public class Player : ServerEntity
             PlaceBlockPacket placeBlockPacket = new PlaceBlockPacket();
             placeBlockPacket.Read(packet);
 
-            GetWorld().SetBlockAt(placeBlockPacket.Type, placeBlockPacket.X, placeBlockPacket.Y, placeBlockPacket.Z);
+            Block? block = Registry.GetBlock(placeBlockPacket.Type); // #TODO_IMP Check if the player actually has this block in their hand.
+
+            if (block == null)
+            {
+                Console.WriteLine("Player is trying to place unknown block");
+                return;
+            }
+
+            if (block.id == 0)
+            {
+                GetWorld().BreakBlock(placeBlockPacket.X, placeBlockPacket.Y, placeBlockPacket.Z);
+            }
+            else
+            {
+                GetWorld().SetBlockAt(block, placeBlockPacket.X, placeBlockPacket.Y, placeBlockPacket.Z);
+            }
 
         }
     }
@@ -139,7 +154,6 @@ public class Player : ServerEntity
 
     private void SendLoadChunk(int chunkX, int chunkY, int chunkZ)
     {
-        Console.WriteLine($"Sending player chunk {chunkX}, {chunkY}, {chunkZ}");
         World world = GetWorld();
 
         Chunk chunk = world.GetOrGenerateChunkAt(

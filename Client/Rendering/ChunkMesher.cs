@@ -25,7 +25,8 @@ public class ChunkMesher
                 for (int z = 0; z < 16; z++)
                 {
                     short voxel = chunk.GetBlock(x, y, z);
-                    if (BlockData.IsInvisible(voxel))
+                    Block? block = Registry.GetBlock(voxel);
+                    if (block == null || !block.isVisible)
                         continue;
 
                     TryAddSide(x, y, z, chunk, Vector3i.UnitX, voxel);
@@ -121,8 +122,8 @@ public class ChunkMesher
         int worldY = (chunk.Y * 16) + y;
         int worldZ = (chunk.Z * 16) + z;
 
-        short block = LocalWorld.World.GetBlockAt(worldX + dir.X, worldY + dir.Y, worldZ + dir.Z);
-        if (BlockData.IsInvisible(block))
+        Block block = LocalWorld.World.GetBlockAt(worldX + dir.X, worldY + dir.Y, worldZ + dir.Z);
+        if (block == null || !block.isVisible)
         {
             AddFace(x, y, z, dir, voxel);
         }
@@ -130,19 +131,32 @@ public class ChunkMesher
 
     private static void AddFace(int x, int y, int z, Vector3i normal, short voxel)
     {
-        BlockFace face = BlockFace.Side;
-        if (normal.Y == 1)
+        BlockFace face = BlockFace.Up;
+
+        if (normal.X == 0 && normal.Y == 1 && normal.Z == 0)
             face = BlockFace.Up;
 
-        if (normal.Y == 0)
-            face = BlockFace.Side;
-
-        if (normal.Y == -1)
+        if (normal.X == 0 && normal.Y == -1 && normal.Z == 0)
             face = BlockFace.Down;
 
+        if (normal.X == 0 && normal.Y == 0 && normal.Z == 1)
+            face = BlockFace.Forward;
 
+        if (normal.X == 0 && normal.Y == 0 && normal.Z == -1)
+            face = BlockFace.Backward;
+
+        if (normal.X == 1 && normal.Y == 0 && normal.Z == 0)
+            face = BlockFace.Right;
+
+        if (normal.X == -1 && normal.Y == 0 && normal.Z == 0)
+            face = BlockFace.Left;
 
         Vector2[] uv = RenderData.BlockTexturesMap.GetBlockTexture(voxel, face);
+        if (uv.Length == 0)
+        {
+            throw new Exception("No UV found for block.");
+        }
+
         Vector3 faceNormal = new(normal.X, normal.Y, normal.Z);
 
         if (normal.X != 0)

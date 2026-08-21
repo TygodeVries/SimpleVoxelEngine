@@ -8,9 +8,9 @@ public class RaycastHit
     public Vector3 ChunkBlockPos;
     public Vector3 WorldBlockPos;
     public Vector3 Normal;
-    public short Block;
+    public Block Block;
 
-    public RaycastHit(Chunk chunk, Vector3 chunkBlockPos, Vector3 worldBlockPos, Vector3 normal, short block)
+    public RaycastHit(Chunk chunk, Vector3 chunkBlockPos, Vector3 worldBlockPos, Vector3 normal, Block block)
     {
         Normal = normal;
         Chunk = chunk;

@@ -17,5 +17,7 @@ public enum PacketType : byte
     Error = 12,
     DreamsRemoveUser = 13,
     DreamsServerList = 14,
-    UnloadChunk = 15
+    UnloadChunk = 15,
+    Texturepack = 16,
+    BlockData = 17
 }
