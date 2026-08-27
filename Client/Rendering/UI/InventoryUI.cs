@@ -39,7 +39,7 @@ public class InventoryUI
         {
             UIRenderer itemRenderer = new UIRenderer();
             itemRenderer.SetTexture(sheepTexture);
-            itemRenderer.scale = 1f / 11f;
+            itemRenderer.scale = 1f / 13f;
             itemRenderer.Parent = hotbarRenderer;
             itemRenderer.visible = false;
             float x = (i / 9f) + (1f / 18f);

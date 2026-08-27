@@ -255,6 +255,11 @@ public class World
         currentBlock.TriggerBlockBreak(new ActionArguments.BlockBrokenArgs(new Vector3(x, y, z)));
     }
 
+    public void BreakBlock(Vector3 pos)
+    {
+        BreakBlock(pos.iX, pos.iY, pos.iZ);
+    }
+
     public void SetBlockAt(Block block, Vector3 pos)
     {
         SetBlockAt(block, pos.iX, pos.iY, pos.iZ);
