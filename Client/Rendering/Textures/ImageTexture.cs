@@ -27,6 +27,11 @@ public class ImageTexture : Texture
         this.pixels = pixels;
     }
 
+    private byte[] pngBytes;
+    public byte[] GetPngBytes()
+    {
+        return pngBytes;
+    }
 
     private static Dictionary<string, ImageTexture> cache = new Dictionary<string, ImageTexture>();
     public static void RemoveFromCache(string path)
@@ -65,7 +70,7 @@ public class ImageTexture : Texture
 
         ImageTexture texture = new ImageTexture(image.Width, image.Height, pixels);
         if (upload) texture.Upload();
-
+        texture.pngBytes = bytes;
         return texture;
     }
 
@@ -112,7 +117,7 @@ public class ImageTexture : Texture
         GL.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
 
         if (GL.GetError() != ErrorCode.NoError)
-            Console.WriteLine($"OpenGL has an error uploading a texture: {GL.GetError()}");
+            Console.WriteLine($"OpenGL has an error uploading a Texture: {GL.GetError()}");
 
     }
 
@@ -122,14 +127,5 @@ public class ImageTexture : Texture
             Upload();
         GL.ActiveTexture(textureUnit);
         GL.BindTexture(TextureTarget.Texture2D, Handle);
-    }
-
-    ~ImageTexture()
-    {
-        if (Handle != 0)
-        {
-            GL.DeleteTexture(Handle);
-            Handle = 0;
-        }
     }
 }

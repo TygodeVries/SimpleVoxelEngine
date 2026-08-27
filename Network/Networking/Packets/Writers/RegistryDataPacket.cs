@@ -1,25 +1,25 @@
 ﻿namespace Shared.Networking;
 
-public class BlockDataPacket : PacketWriter
+public class RegistryDataPacket : PacketWriter
 {
-    public byte[] BlockData;
+    public byte[] Data;
     public override void Read(Packet packet)
     {
         int data = packet.ReadInt();
-        BlockData = packet.ReadByteArray(data);
+        Data = packet.ReadByteArray(data);
     }
 
     public override Packet Write()
     {
         Packet packet = new Packet(WriterType());
-        packet.WriteInt(BlockData.Length);
-        packet.WriteByteArray(BlockData);
+        packet.WriteInt(Data.Length);
+        packet.WriteByteArray(Data);
         return packet;
     }
 
     public override PacketType WriterType()
     {
-        return PacketType.BlockData;
+        return PacketType.RegistryData;
     }
 }
 

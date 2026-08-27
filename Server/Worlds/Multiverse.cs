@@ -18,11 +18,11 @@ public class Multiverse
 
     private static void World_OnBlockPlace((Block block, int x, int y, int z) obj)
     {
-        PlaceBlockPacket packet = new PlaceBlockPacket();
+        SetBlockPacket packet = new SetBlockPacket();
         packet.X = obj.x;
         packet.Y = obj.y;
         packet.Z = obj.z;
-        packet.Type = obj.block.id;
+        packet.Type = obj.block.RegistryId;
 
         Program.server.BroadcastPacket(packet.Write());
     }

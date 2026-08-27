@@ -125,6 +125,14 @@ public class ShaderProgram
         GL.UniformMatrix4f(mvpLocation, 1, false, ref matrix4);
     }
 
+    public static void GlobalSetMatrix4(string field, Matrix4 matrix4)
+    {
+        int mvpLocation = GlobalGetUniformLocation(field);
+        if (mvpLocation == -1)
+            return;
+        GL.UniformMatrix4f(mvpLocation, 1, false, ref matrix4);
+    }
+
     public void SetInt(string field, int i)
     {
         int mvpLocation = GetUniformLocation(field);
@@ -149,7 +157,7 @@ public class ShaderProgram
     /// <summary>
     /// Get the location of the Uniform inside of the shader
     /// </summary>
-    /// <param name="name"></param>
+    /// <param Name="Identifier"></param>
     /// <returns></returns>
     public int GetUniformLocation(string name)
     {
@@ -164,6 +172,18 @@ public class ShaderProgram
         }
 
         uniformLocations[name] = location;
+        return location;
+    }
+
+    public static int GlobalGetUniformLocation(string name)
+    {
+        GL.GetInteger(GetPName.CurrentProgram, out int currentProgramId);
+
+        int location = GL.GetUniformLocation(currentProgramId, name);
+        if (location == -1)
+        {
+            Console.WriteLine($"Value '{name}' not found in shader, but you are trying to access it anyways!");
+        }
         return location;
     }
 

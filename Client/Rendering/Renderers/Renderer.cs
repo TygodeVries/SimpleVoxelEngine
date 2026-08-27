@@ -7,10 +7,11 @@ public abstract class Renderer
     /// <summary>
     /// Runs when the object should be rendered.
     /// </summary>
-    /// <param name="isShadowPass"></param>
+    /// <param Name="isShadowPass"></param>
     public abstract void Render(bool isShadowPass);
     public bool enableDepth = true;
     public int sort = 0;
+    public bool visible = true;
 
     /// <summary>
     /// The shader to use when the object is rendered.

@@ -11,12 +11,19 @@ public class TextureBuilder
 
     public int TextureResolution { get; private set; }
 
-    public void AddTexture(string path)
+    public string AddTexture(string path)
     {
         string name = Path.GetFileNameWithoutExtension(path);
 
         textureIds.Add(name);
         textures.Add(File.ReadAllBytes(path));
+
+        return name;
+    }
+
+    public List<string> GetNames()
+    {
+        return textureIds;
     }
 
     public byte[] GetTexture()

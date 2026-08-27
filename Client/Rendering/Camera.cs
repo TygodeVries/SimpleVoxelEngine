@@ -126,7 +126,7 @@ public class Camera
     /// <summary>
     /// Move based on local camera orientation
     /// </summary>
-    /// <param name="delta">X = Strafe Right, Y = Global Up, Z = Move Forward</param>
+    /// <param Name="delta">X = Strafe Right, Y = Global Up, Z = Move Forward</param>
     public static Vector3 Translate(Vector3 delta)
     {
         Vector3 flatDirection = Direction;

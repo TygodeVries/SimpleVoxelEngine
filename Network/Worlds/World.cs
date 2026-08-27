@@ -27,7 +27,7 @@ public class World
                     int worldY = (y * 16) + by;
                     int worldZ = (z * 16) + bz;
                     Block? block = WorldGenerator.Generate(worldX, worldY, worldZ);
-                    chunk.SetBlock(block.id, bx, by, bz);
+                    chunk.SetBlock(block.RegistryId, bx, by, bz);
                 }
 
         chunk.isDirty = true;
@@ -59,10 +59,14 @@ public class World
     private List<Entity> entities = new List<Entity>();
     private List<Entity> futureEntities = new List<Entity>();
     private List<Entity> graveYard = new List<Entity>();
+
+    public event Action<OnEntitySpawnArgs>? OnEntitySpawn;
+
     public void SpawnEntity(Entity entity, int forceId = -1)
     {
         this.futureEntities.Add(entity);
         entity.SetWorld(this);
+
 
         if (forceId == -1)
         {
@@ -74,6 +78,9 @@ public class World
             entity.SetId(forceId);
             IdCount = forceId + 1;
         }
+
+
+        OnEntitySpawn?.Invoke(new OnEntitySpawnArgs(entity));
     }
 
     public List<Entity> GetEntities()
@@ -144,7 +151,7 @@ public class World
             {
                 short blockId = chunk.GetBlock(blockX, blockY, blockZ);
                 Block? block = Registry.GetBlock(blockId);
-                if (block != null && block.isVisible)
+                if (block != null && block.Visible)
                 {
                     Vector3 delta = currentVoxel - lastVoxel;
                     Vector3 normal = new Vector3(-delta.X, -delta.Y, -delta.Z);
@@ -248,8 +255,18 @@ public class World
         currentBlock.TriggerBlockBreak(new ActionArguments.BlockBrokenArgs(new Vector3(x, y, z)));
     }
 
+    public void SetBlockAt(Block block, Vector3 pos)
+    {
+        SetBlockAt(block, pos.iX, pos.iY, pos.iZ);
+    }
+
     public void SetBlockAt(Block block, int x, int y, int z)
     {
+        if (block.RegistryId == -1)
+        {
+            throw new Exception($"A block was attempted to be placed at {x}, {y}, {z}. But the block was not registerd.");
+        }
+
         OnBlockPlace?.Invoke((block, x, y, z));
 
         int chunkX = FloorDiv(x, 16);
@@ -263,7 +280,7 @@ public class World
         Chunk chunk = GetOrGenerateChunkAt(chunkX, chunkY, chunkZ);
         if (chunk != null)
         {
-            chunk.SetBlock(block.id, blockX, blockY, blockZ);
+            chunk.SetBlock(block.RegistryId, blockX, blockY, blockZ);
             chunk.isDirty = true;
         }
         else
@@ -385,5 +402,15 @@ public class World
     public List<Chunk> GetChunks()
     {
         return chunks.Values.ToList();
+    }
+}
+
+public class OnEntitySpawnArgs
+{
+    public Entity Entity { get; private set; }
+
+    public OnEntitySpawnArgs(Entity entity)
+    {
+        this.Entity = entity;
     }
 }

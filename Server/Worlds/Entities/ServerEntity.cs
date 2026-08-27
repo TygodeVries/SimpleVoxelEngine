@@ -38,9 +38,15 @@ public abstract class ServerEntity : Entity
         base.OnDestroy();
     }
 
+    public event Action<EntityMoveArgs>? OnMove;
+
     public void Teleport(Vector3 position)
     {
+        Vector3 last = this.position;
+
         this.position = position;
+        OnMove?.Invoke(new EntityMoveArgs(last, position));
+
         MoveEntityPacket moveEntityPacket = new MoveEntityPacket()
         {
             Id = Id,

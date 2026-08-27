@@ -1,6 +1,6 @@
-﻿using OpenTK.Mathematics;
+﻿using Shared.Mathf;
 using System.Globalization;
-
+using Vector4 = OpenTK.Mathematics.Vector4;
 namespace Client.Rendering;
 
 public class Mesh
@@ -260,7 +260,7 @@ public class Mesh
             Vector3 t = tan1[i];
 
             Vector3 tangent = t - (n * Vector3.Dot(n, t));
-            tangent = Vector3.Normalize(tangent);
+            tangent = tangent.Normalized;
 
             float w = (Vector3.Dot(Vector3.Cross(n, t), tan2[i]) < 0.0f) ? -1.0f : 1.0f;
 

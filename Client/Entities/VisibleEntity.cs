@@ -9,7 +9,7 @@ namespace SimpleVoxelEngine.Entities;
 /// </summary>
 public abstract class VisibleEntity : Entity
 {
-    private MeshRenderer renderer = new MeshRenderer(RenderData.DefaultShader!);
+    private MeshRenderer renderer = new MeshRenderer(RenderData.DefaultChunkShader!);
 
     // Track the smoothed visual position separately from the physical entity position
     private Vector3 visualPosition;
@@ -29,6 +29,11 @@ public abstract class VisibleEntity : Entity
     {
         renderer.SetMesh(mesh);
         GameCanvas.AddRenderer(renderer);
+    }
+
+    public void SetTexture(Texture texture)
+    {
+        renderer.Texture = texture;
     }
 
     public override void OnDestroy()

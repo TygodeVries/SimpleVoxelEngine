@@ -9,7 +9,7 @@ public abstract class Entity
     /// <summary>
     /// A bad function to call if you don't know what you are doing!!!
     /// </summary>
-    /// <param name="id"></param>
+    /// <param Name="RegistryId"></param>
     public void SetId(int id)
     {
         this.Id = id;
@@ -22,7 +22,7 @@ public abstract class Entity
     /// <summary>
     /// A bad function to call if you don't know what you are doing!!!
     /// </summary>
-    /// <param name="id"></param>
+    /// <param Name="RegistryId"></param>
     public void SetWorld(World world)
     {
         this.world = world;
@@ -83,7 +83,7 @@ public abstract class Entity
                     y,
                     z);
 
-                if (block == null || block.isSolid)
+                if (block == null || block.Solid)
                 {
                     hitX = true;
                     break;
@@ -108,7 +108,7 @@ public abstract class Entity
                                 (int)MathF.Floor(position.Y) - 1,
                                 supportZ);
 
-                            if (blockB == null || blockB.isSolid)
+                            if (blockB == null || blockB.Solid)
                             {
                                 hasSupport = true;
                                 break;
@@ -154,7 +154,7 @@ public abstract class Entity
                     (int)MathF.Floor(checkY),
                     z);
 
-                if (block == null || block.isSolid)
+                if (block == null || block.Solid)
                 {
                     hitY = true;
                     break;
@@ -193,7 +193,7 @@ public abstract class Entity
                     y,
                     (int)MathF.Floor(checkZ));
 
-                if (block == null || block.isSolid)
+                if (block == null || block.Solid)
                 {
                     hitZ = true;
                     break;
@@ -218,7 +218,7 @@ public abstract class Entity
                                 (int)MathF.Floor(position.Y) - 1,
                                 supportZ);
 
-                            if (blockB == null || blockB.isSolid)
+                            if (blockB == null || blockB.Solid)
                             {
                                 hasSupport = true;
                                 break;

@@ -4,7 +4,7 @@ namespace Client.Rendering;
 
 public class MeshRenderer : Renderer
 {
-    private ShaderProgram shader;
+    internal ShaderProgram shader;
     public MeshRenderer(ShaderProgram shader)
     {
         this.shader = shader;

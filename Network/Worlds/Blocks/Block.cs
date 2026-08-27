@@ -4,12 +4,19 @@ namespace Shared.Worlds;
 
 public class Block
 {
-    public short id { get; private set; }
-    public string name { get; private set; }
-    internal Block(short id, string name)
+    public static Block Unregistered { get; private set; } = new Block(-1, "unregistered");
+
+    /// <summary>
+    /// The internal RegistryId of the block
+    /// </summary>
+    public short RegistryId { get; private set; }
+
+
+    public string Identifier { get; private set; } = "invalid";
+    internal Block(short id, string identifier)
     {
-        this.id = id;
-        this.name = name;
+        this.RegistryId = id;
+        this.Identifier = identifier;
     }
 
     internal Block()
@@ -20,18 +27,18 @@ public class Block
     /// <summary>
     /// Default: True If the block has collision, or can be walked trough
     /// </summary>
-    public bool isSolid = true;
+    public bool Solid { get; set; } = true;
 
     /// <summary>
     /// Default: True If the block is visible.
     /// Setting it to false will make it not generate any topology.
     /// </summary>
-    public bool isVisible = true;
+    public bool Visible { get; set; } = true;
 
     /// <summary>
-    /// The texture of the block
+    /// The Texture of the block
     /// </summary>
-    public BlockTexture? texture;
+    public BlockTexture? Texture { get; set; }
 
     /// <summary>
     /// Runs when the block is broken
@@ -47,15 +54,15 @@ public class Block
         MemoryStream memoryStream = new MemoryStream();
         BinaryWriter writer = new BinaryWriter(memoryStream);
 
-        writer.Write(id);
-        writer.Write(name);
-        writer.Write(isSolid);
-        writer.Write(isVisible);
+        writer.Write(RegistryId);
+        writer.Write(Identifier);
+        writer.Write(Solid);
+        writer.Write(Visible);
 
         byte[] textureData = new byte[0];
-        if (texture != null)
+        if (Texture != null)
         {
-            textureData = texture.Serialize();
+            textureData = Texture.Serialize();
 
             writer.Write(textureData.Length);
             writer.Write(textureData);
@@ -76,18 +83,18 @@ public class Block
         MemoryStream memoryStream = new MemoryStream(data);
         BinaryReader reader = new BinaryReader(memoryStream);
 
-        id = reader.ReadInt16();
-        name = reader.ReadString();
-        isSolid = reader.ReadBoolean();
-        isVisible = reader.ReadBoolean();
+        RegistryId = reader.ReadInt16();
+        Identifier = reader.ReadString();
+        Solid = reader.ReadBoolean();
+        Visible = reader.ReadBoolean();
 
         int l = reader.ReadInt32();
 
         if (l != 0)
         {
             byte[] tex = reader.ReadBytes(l);
-            texture = new BlockTexture();
-            texture.Load(tex);
+            Texture = new BlockTexture();
+            Texture.Load(tex);
         }
     }
 }

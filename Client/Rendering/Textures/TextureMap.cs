@@ -1,4 +1,4 @@
-﻿using OpenTK.Mathematics;
+﻿using Shared.Mathf;
 using Shared.Worlds;
 
 namespace Client.Rendering;
@@ -9,6 +9,7 @@ namespace Client.Rendering;
 /// </summary>
 public class TextureMap
 {
+    private List<string> names = new List<string>();
     private int width = 0;
     private int height = 0;
 
@@ -18,8 +19,15 @@ public class TextureMap
     public int row;
     public int col;
 
-    public TextureMap(ImageTexture texture)
+    public TextureMap(List<string> ids, ImageTexture texture)
     {
+        this.names = ids;
+
+        for (int i = 0; i < names.Count; i++)
+        {
+            names[i] = names[i].ToLower();
+        }
+
         width = texture.width;
         height = texture.height;
 
@@ -38,9 +46,9 @@ public class TextureMap
 
     private readonly Dictionary<(int textureId, BlockFace face), Vector2[]> _uvMappings = new();
 
-    public void AddMapping(int textureId, short blockType, BlockFace face)
+    public void AddMapping(string textureId, short blockType, BlockFace face)
     {
-        _uvMappings[(blockType, face)] = GetUV(textureId);
+        _uvMappings[(blockType, face)] = GetUV(textureId.ToLower());
     }
 
     public Vector2[] GetBlockTexture(int textureId, BlockFace face)
@@ -50,8 +58,17 @@ public class TextureMap
             : new Vector2[0];
     }
 
+    public Vector2[] GetUV(string textureName)
+    {
+        return GetUV(names.IndexOf(textureName.ToLower()));
+    }
+
     public Vector2[] GetUV(int textureId)
     {
+        if (textureId == -1)
+        {
+            throw new Exception("-1 is not a valid Texture RegistryId.");
+        }
         int texX = textureId % row;
         int texY = textureId / row;
 

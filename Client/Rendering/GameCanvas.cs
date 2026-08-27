@@ -65,7 +65,13 @@ public class GameCanvas : GameWindow
 
         SwitchDedicated();
 
-        AddRenderer(new UIRenderer(RenderData.UIShader));
+        InventoryUI.CreateUI();
+
+        ImageTexture crossAir = ImageTexture.LoadFromPng("Textures/Crossair.png");
+
+        UIRenderer uiCrossAir = new UIRenderer();
+        uiCrossAir.SetTexture(crossAir);
+        AddRenderer(uiCrossAir);
 
         // Skybox
 
@@ -106,11 +112,13 @@ public class GameCanvas : GameWindow
     }
     private void World_OnRemoveChunk(Shared.Worlds.Chunk obj)
     {
-        for (int i = 0; i < renderers.Count; i++)
+        for (int i = 0; i < chunkRenderers.Count; i++)
         {
-            if (renderers[i] is ChunkRenderer chunkRenderer && chunkRenderer.Chunk == obj)
+
+            if (chunkRenderers[i].Chunk == obj)
             {
-                renderers.RemoveAt(i);
+                RemoveRenderer(chunkRenderers[i]);
+                i--;
                 break;
             }
         }
@@ -122,11 +130,6 @@ public class GameCanvas : GameWindow
         {
             Environment.SetEnvironmentVariable("DRI_PRIME", "1");
         }
-
-        string vendor = GL.GetString(StringName.Vendor) ?? "Unknown";
-        string renderer = GL.GetString(StringName.Renderer) ?? "Unknown";
-
-        Console.WriteLine($"GPU: {renderer}");
     }
     private void World_OnAddChunk(Shared.Worlds.Chunk obj)
     {
@@ -136,7 +139,7 @@ public class GameCanvas : GameWindow
 
     private Stopwatch fpsCounterStopwatch = new Stopwatch();
     private int frameCount = 0;
-    private event Action? OnUpdate;
+    public static event Action? OnUpdate;
     protected override void OnRenderFrame(FrameEventArgs args)
     {
         // Keep track of the framerate
@@ -156,29 +159,99 @@ public class GameCanvas : GameWindow
         // Clear the background
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        // Render the shadows if enabled
-        if (Shadow.ShadowsEnabled)
-            Shadow.RenderShadows();
-
         // Render at the correct resolution, gets reset if shadows are rendered.
         GL.Viewport(0, 0, width, height);
 
         Matrix4 viewMatrix = Camera.GetViewMatrix();
         Matrix4 projectionMatrix = Camera.GetProjectionMatrix();
 
-        Matrix4 ortho = Matrix4.CreateOrthographicOffCenter(
-    0,
-    GameCanvas.Width,
-    GameCanvas.Height,
-    0,
-    -1,
-    1
-);
+        Matrix4 orthoProjection = Matrix4.CreateOrthographicOffCenter(
+            0,
+            GameCanvas.Width,
+            GameCanvas.Height,
+            0,
+            -1,
+            1
+        );
 
-        // Loop over every thing we are rendering
-        foreach (Renderer renderer in renderers)
+        // Render background elements
+        int leftOff = RenderRenderers(0, 0, viewMatrix, orthoProjection, projectionMatrix);
+
+        ChunkRenderType currentChunkRenderType = ChunkRenderType.Empty;
+
+        // Set the data once.
+        RenderData.SingleChunkShader!.SetMatrix4("u_View", viewMatrix);
+        RenderData.DefaultChunkShader!.SetMatrix4("u_View", viewMatrix);
+
+        RenderData.SingleChunkShader!.SetMatrix4("u_Projection", projectionMatrix);
+        RenderData.DefaultChunkShader!.SetMatrix4("u_Projection", projectionMatrix);
+
+
+        if (RenderData.BlockTexture != null)
         {
+            RenderData.BlockTexture!.Use(TextureUnit.Texture0);
+        }
+        else
+        {
+            // Panic?
+        }
+
+        GL.Enable(EnableCap.CullFace);
+        GL.Enable(EnableCap.DepthTest);
+
+        // Render chunks
+        foreach (ChunkRenderer chunkRenderer in chunkRenderers)
+        {
+            if (chunkRenderer.renderType == ChunkRenderType.Empty)
+            {
+                currentChunkRenderType = ChunkRenderType.Empty;
+                continue;
+            }
+
+            // Use the correct shader
+            if (chunkRenderer.renderType == ChunkRenderType.Solid && currentChunkRenderType != ChunkRenderType.Solid)
+            {
+                currentChunkRenderType = ChunkRenderType.Solid;
+                RenderData.SingleChunkShader!.Use();
+            }
+            else if (chunkRenderer.renderType == ChunkRenderType.Normal && currentChunkRenderType != ChunkRenderType.Normal)
+            {
+                currentChunkRenderType = ChunkRenderType.Normal;
+                RenderData.DefaultChunkShader!.Use();
+            }
+
+            // Set the model matrix 
+            ShaderProgram.GlobalSetMatrix4("u_Model", chunkRenderer.GetModelMatrix());
+
+            // Render the chunk
+
+            chunkRenderer.Render(false);
+        }
+
+        // Render foreground elements
+        RenderRenderers(leftOff, int.MaxValue, viewMatrix, orthoProjection, projectionMatrix);
+
+        // Say we are ready to show the frame!
+        SwapBuffers();
+    }
+
+    public int RenderRenderers(int startIndex, int untilExcludeDepth, Matrix4 viewMatrix, Matrix4 orthoProjection, Matrix4 projectionMatrix)
+    {
+        // Loop over every thing we are rendering
+        for (int i = startIndex; i < renderers.Count; i++)
+        {
+
+            Renderer renderer = renderers[i];
+            if (!renderer.visible)
+                continue;
+
+
             // Render that thing.
+
+            if (renderer.sort >= untilExcludeDepth)
+            {
+                return i;
+            }
 
             ShaderProgram? shader = renderer.GetShader();
 
@@ -203,28 +276,18 @@ public class GameCanvas : GameWindow
 
             if (shader.useOrthoProjection)
             {
-                shader.SetMatrix4("u_Projection", ortho);
+                shader.SetMatrix4("u_Projection", orthoProjection);
             }
             else
             {
                 shader.SetMatrix4("u_Projection", projectionMatrix);
             }
-            // Pass shadow data only if enabled
-            if (Shadow.ShadowsEnabled)
-            {
-                shader.SetMatrix4("u_LightSpaceMatrix", Shadow.lightSpaceMatrix);
 
-                GL.ActiveTexture(TextureUnit.Texture1);
-                GL.BindTexture(TextureTarget.Texture2D, Shadow.depthGl);
-                shader.SetTextureId("shadowMap", 1);
-            }
-
-            GL.ActiveTexture(TextureUnit.Texture0);
             renderer.Render(false);
         }
 
-        // Say we are ready to show the frame!
-        SwapBuffers();
+        // We are done
+        return renderers.Count + 1;
     }
 
 
@@ -248,6 +311,7 @@ public class GameCanvas : GameWindow
     /// The list of things we are rendering.
     /// </summary>
     private static List<Renderer> renderers = new List<Renderer>();
+    private static List<ChunkRenderer> chunkRenderers = new List<ChunkRenderer>();
 
     public static List<Renderer> GetRenderers()
     {
@@ -257,24 +321,34 @@ public class GameCanvas : GameWindow
     /// <summary>
     /// Add a thing to renderer
     /// </summary>
-    /// <param name="renderer"></param>
+    /// <param Name="renderer"></param>
     public static void AddRenderer(Renderer renderer)
     {
-        renderers.Add(renderer);
-
-        renderers.Sort((a, b) =>
+        if (renderer is ChunkRenderer chunk)
         {
-            return a.sort - b.sort;
-        });
+            chunkRenderers.Add(chunk);
+        }
+        else
+        {
+            renderers.Add(renderer);
+
+            renderers.Sort((a, b) =>
+            {
+                return a.sort - b.sort;
+            });
+        }
     }
 
     /// <summary>
     /// Remove a thing to render
     /// </summary>
-    /// <param name="renderer"></param>
+    /// <param Name="renderer"></param>
     public static void RemoveRenderer(Renderer renderer)
     {
         renderers.Remove(renderer);
+
+        if (renderer is ChunkRenderer chunkRenderer)
+            chunkRenderers.Remove(chunkRenderer);
     }
 
     protected override void OnKeyDown(KeyboardKeyEventArgs e)
@@ -292,6 +366,11 @@ public class GameCanvas : GameWindow
         if ((float)args.Time < 0.1f)
             Time.DeltaTime = (float)args.Time;
 
+        foreach (ChunkRenderer chunkRenderer in chunkRenderers)
+        {
+            chunkRenderer.Update();
+        }
+
         if (Keyboard.Current.IsPressedThisFrame(OpenTK.Windowing.GraphicsLibraryFramework.Keys.F7))
         {
             int currentId = Environment.ProcessId;
@@ -307,7 +386,26 @@ public class GameCanvas : GameWindow
             Process.Start(startInfo);
         }
 
+        if (Keyboard.Current.IsPressedThisFrame(OpenTK.Windowing.GraphicsLibraryFramework.Keys.F2))
+        {
+            if (!Keyboard.Current.IsPressed(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftShift))
+            {
+                File.WriteAllBytes("TextureDump.png", ((ImageTexture)RenderData.BlockTexture).GetPngBytes());
+            }
+            else
+            {
+                File.WriteAllBytes("TextureDump.png", ((ImageTexture)RenderData.ItemTexture).GetPngBytes());
+            }
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = Path.GetFullPath("TextureDump.png"),
+                UseShellExecute = true
+            });
+        }
+
         LocalWorld.World.Tick();
+
+        OnUpdate?.Invoke();
 
         Keyboard.Current.EndOfFrame();
         Mouse.Current.EndOfFrame();
@@ -321,10 +419,6 @@ public class GameCanvas : GameWindow
         {
             CursorState = CursorState.Normal;
         }
-
-
-        OnUpdate?.Invoke();
-
     }
 
     protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -372,6 +466,11 @@ public class GameCanvas : GameWindow
         newDirection.Z = MathF.Cos(pitchRad) * MathF.Sin(yawRad);
 
         Camera.Direction = newDirection.Normalized;
+    }
+
+    protected override void OnMouseWheel(MouseWheelEventArgs e)
+    {
+        Mouse.Current.scroll = new Vector2(e.Offset);
     }
 
     private float Clamp(float a, float min, float max)

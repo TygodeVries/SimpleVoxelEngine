@@ -1,4 +1,7 @@
-﻿namespace Shared.Networking;
+﻿using Shared.Mathf;
+using Shared.Worlds;
+
+namespace Shared.Networking;
 
 public class Packet
 {
@@ -59,6 +62,13 @@ public class Packet
         writer.Write(value);
     }
 
+    public void WriteVector3(Vector3 vector)
+    {
+        WriteFloat(vector.X);
+        WriteFloat(vector.Y);
+        WriteFloat(vector.Z);
+    }
+
     public void WriteByte(byte value)
     {
         writer.Write(value);
@@ -69,10 +79,52 @@ public class Packet
         writer.Write(value);
     }
 
+    public void WriteBool(bool value)
+    {
+        writer.Write(value);
+    }
+
+    public void WriteItemStack(ItemStack? itemStack)
+    {
+        if (itemStack == null)
+        {
+            WriteBool(false);
+            return;
+        }
+
+        WriteBool(true);
+        WriteInt(itemStack.Count);
+        WriteString(itemStack.Type.Name);
+    }
+
     // Read methods
+
+    public ItemStack? ReadItemStack()
+    {
+        bool exists = ReadBool();
+        if (!exists)
+            return null;
+
+        int amount = ReadInt();
+        string typeName = ReadString();
+
+        Item? type = Registry.GetItem(typeName);
+        if (type == null)
+        {
+            throw new Exception($"Could not find item {typeName} in registry while decoding packet!");
+        }
+
+        ItemStack itemStack = new ItemStack(type, amount);
+        return itemStack;
+    }
+
     public int ReadInt()
     {
         return reader.ReadInt32();
+    }
+    public bool ReadBool()
+    {
+        return reader.ReadBoolean();
     }
 
     public string ReadString()
@@ -83,6 +135,11 @@ public class Packet
     public float ReadFloat()
     {
         return reader.ReadSingle();
+    }
+
+    public Vector3 ReadVector3()
+    {
+        return new Vector3(ReadFloat(), ReadFloat(), ReadFloat());
     }
 
     public byte ReadByte()

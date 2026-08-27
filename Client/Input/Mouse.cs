@@ -16,15 +16,11 @@ public class Mouse
     /// </summary>
     public void EndOfFrame()
     {
-        mouseDelta = Vector2.Zero;
         scroll = Vector2.Zero;
 
         leftWasPressed = leftPressed;
         rightWasPressed = rightPressed;
     }
-    private Vector2 lastFrameScroll = Vector2.Zero;
-    public Vector2 mouseDelta;
-    public Vector2 position;
 
     public bool leftPressed;
     public bool rightPressed;

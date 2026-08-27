@@ -1,5 +1,5 @@
 ﻿using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
+using Shared.Mathf;
 using Shared.Worlds;
 
 namespace Client.Rendering;
@@ -14,31 +14,47 @@ public class RenderData
 
 
     public static Texture? BlockTexture { get; private set; }
+    public static TextureMap? BlockTexturesMap { get; private set; }
 
-    public static void SetBlockTexture(Texture texture)
+    public static void SetBlockTexture(List<string> names, Texture texture)
     {
         BlockTexture = texture;
 
-        BlockTexturesMap = new TextureMap((ImageTexture)BlockTexture);
+        BlockTexturesMap = new TextureMap(names, (ImageTexture)BlockTexture);
 
-        Console.WriteLine($"Block texture of {((ImageTexture)BlockTexture).width}x{((ImageTexture)BlockTexture).height} loaded!");
+        Console.WriteLine($"Block Texture of {((ImageTexture)BlockTexture).width}x{((ImageTexture)BlockTexture).height} loaded!");
 
         LocalWorld.Regenerate();
     }
 
-    public static TextureMap? BlockTexturesMap { get; private set; }
+    public static Texture? ItemTexture { get; private set; }
+    public static TextureMap? ItemTexturesMap { get; private set; }
 
-    public static ShaderProgram? DefaultShader { get; private set; }
-    public static ShaderProgram? SingleBlockShader { get; private set; }
+    public static void SetItemTexture(List<string> names, Texture texture)
+    {
+        ItemTexture = texture;
+
+        ItemTexturesMap = new TextureMap(names, (ImageTexture)ItemTexture);
+
+        Console.WriteLine($"Item Texture of {((ImageTexture)ItemTexture).width}x{((ImageTexture)ItemTexture).height} loaded!");
+
+        OnItemTextureUpdated?.Invoke();
+    }
+
+    public static event Action? OnItemTextureUpdated;
+
+    public static ShaderProgram? DefaultChunkShader { get; private set; }
+    public static ShaderProgram? SingleChunkShader { get; private set; }
     public static ShaderProgram? DepthShader { get; private set; }
     public static ShaderProgram? UIShader { get; private set; }
     public static ShaderProgram? SkyboxShader { get; private set; }
     public static ShaderProgram? SelectionShader { get; private set; }
+    public static Texture PlayerTexture;
     public static void SetupDefaults()
     {
         BlockTexturesMap = new TextureMap(0, 0);
-
-        DefaultShader = new ShaderProgram(
+        PlayerTexture = ImageTexture.LoadFromPng("Textures/Player.png", flip: true);
+        DefaultChunkShader = new ShaderProgram(
             File.ReadAllText("Shaders/default.vert"),
             File.ReadAllText("Shaders/default.frag"));
 
@@ -50,7 +66,7 @@ public class RenderData
             File.ReadAllText("Shaders/ui.vert"),
             File.ReadAllText("Shaders/ui.frag"));
 
-        SingleBlockShader = new ShaderProgram(
+        SingleChunkShader = new ShaderProgram(
             File.ReadAllText("Shaders/default.vert"),
             File.ReadAllText("Shaders/single.frag"));
 
@@ -59,13 +75,16 @@ public class RenderData
             File.ReadAllText("Shaders/skybox.frag"));
 
         SkyboxShader.SetTextureId("u_Color", 0);
-        SingleBlockShader.SetVector4("u_TextureInfo", new Vector4(BlockTexturesMap.row, BlockTexturesMap.col, 16, 0));
+        SingleChunkShader.SetVector4("u_TextureInfo", new OpenTK.Mathematics.Vector4(BlockTexturesMap.row, BlockTexturesMap.col, 16, 0));
 
         DepthShader = new ShaderProgram(
             File.ReadAllText("Shaders/shadow.vert"),
             File.ReadAllText("Shaders/shadow.frag"));
 
-        DefaultShader.SetTextureId("u_Color", 0);
+        DefaultChunkShader.SetTextureId("u_Color", 0);
+
+        SingleChunkShader!.SetTextureId("u_Color", 0);
+        DefaultChunkShader!.SetTextureId("u_Color", 0);
 
         CreateSolidChunkVertexBuffer();
         CreateSolidChunkNormalBuffer();

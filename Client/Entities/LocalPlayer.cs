@@ -22,8 +22,7 @@ public class LocalPlayer : Entity
         Movement();
 
         ApplyPhysics(isCrouch && IsGrounded);
-        Break();
-        Place();
+        Interact();
 
         isCrouch = Keyboard.Current.IsPressed(Keys.LeftShift);
 
@@ -46,49 +45,44 @@ public class LocalPlayer : Entity
         }
     }
 
-    private void Break()
+    private void Interact()
     {
         if (Mouse.Current.LeftPressedThisFrame())
         {
+            PlayerInteractPacket playerInteractPacket = new PlayerInteractPacket();
+
             RaycastHit? hit = LocalWorld.World.Raycast(Camera.Position, Camera.Direction, 5);
-            if (hit == null)
-                return;
+            if (hit != null)
+            {
+                playerInteractPacket.InteractionType = InteractionType.LeftClickBlock;
+                playerInteractPacket.BlockPos = hit.WorldBlockPos;
+                playerInteractPacket.BlockNormal = hit.Normal;
+            }
+            else
+            {
+                playerInteractPacket.InteractionType = InteractionType.LeftClickAir;
+            }
 
-            Block airBlock = Registry.GetBlock("air");
-
-            LocalWorld.World.SetBlockAt(airBlock, hit.WorldBlockPos.iX, hit.WorldBlockPos.iY, hit.WorldBlockPos.iZ);
-
-
-            PlaceBlockPacket packet = new PlaceBlockPacket();
-            packet.X = hit.WorldBlockPos.iX;
-            packet.Y = hit.WorldBlockPos.iY;
-            packet.Z = hit.WorldBlockPos.iZ;
-            packet.Type = 0;
-
-            Network.SendPacket(packet.Write());
-
+            Network.SendPacket(playerInteractPacket.Write());
         }
-    }
 
-    private void Place()
-    {
         if (Mouse.Current.RightPressedThisFrame())
         {
+            PlayerInteractPacket playerInteractPacket = new PlayerInteractPacket();
+
             RaycastHit? hit = LocalWorld.World.Raycast(Camera.Position, Camera.Direction, 5);
-            if (hit == null)
-                return;
+            if (hit != null)
+            {
+                playerInteractPacket.InteractionType = InteractionType.RightClickBlock;
+                playerInteractPacket.BlockPos = hit.WorldBlockPos;
+                playerInteractPacket.BlockNormal = hit.Normal;
+            }
+            else
+            {
+                playerInteractPacket.InteractionType = InteractionType.RightClickAir;
+            }
 
-            Vector3 pos = hit.WorldBlockPos + hit.Normal;
-
-            //LocalWorld.World.SetBlockAt(DefaultBlocks.GRASS, (int)pos.X, (int)pos.Y, (int)pos.Z);
-
-            PlaceBlockPacket packet = new PlaceBlockPacket();
-            packet.X = (int)pos.X;
-            packet.Y = (int)pos.Y;
-            packet.Z = (int)pos.Z;
-            packet.Type = 1;
-
-            Network.SendPacket(packet.Write());
+            Network.SendPacket(playerInteractPacket.Write());
         }
     }
 

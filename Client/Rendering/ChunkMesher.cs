@@ -26,7 +26,7 @@ public class ChunkMesher
                 {
                     short voxel = chunk.GetBlock(x, y, z);
                     Block? block = Registry.GetBlock(voxel);
-                    if (block == null || !block.isVisible)
+                    if (block == null || !block.Visible)
                         continue;
 
                     TryAddSide(x, y, z, chunk, Vector3i.UnitX, voxel);
@@ -123,7 +123,7 @@ public class ChunkMesher
         int worldZ = (chunk.Z * 16) + z;
 
         Block block = LocalWorld.World.GetBlockAt(worldX + dir.X, worldY + dir.Y, worldZ + dir.Z);
-        if (block == null || !block.isVisible)
+        if (block == null || !block.Visible)
         {
             AddFace(x, y, z, dir, voxel);
         }
@@ -149,7 +149,7 @@ public class ChunkMesher
         else if (normal == -Vector3i.UnitX)
             face = BlockFace.Left;
 
-        Vector2[] uv = RenderData.BlockTexturesMap.GetBlockTexture(voxel, face);
+        Vector2[] uv = Shared.Mathf.Vector2.ArrayToOpenTK(RenderData.BlockTexturesMap.GetBlockTexture(voxel, face));
 
         if (uv.Length == 0)
             throw new Exception("No UV found for block.");

@@ -8,7 +8,7 @@ public enum PacketType : byte
     SpawnEntity = 3,
     DestroyEntity = 4,
     MoveEntity = 5,
-    PlaceBlock = 6,
+    SetBlock = 6,
     BreakBlock = 7,
     DreamsJoin = 8,
     DreamsServerInfo = 9,
@@ -19,5 +19,8 @@ public enum PacketType : byte
     DreamsServerList = 14,
     UnloadChunk = 15,
     Texturepack = 16,
-    BlockData = 17
+    RegistryData = 17,
+    SelectSlot = 18,
+    PlayerInteract = 19,
+    InventoryChange = 20
 }

@@ -23,23 +23,25 @@ public class ChunkRenderer : Renderer
         modelMatrix = OpenTK.Mathematics.Matrix4.CreateTranslation(chunk.X * 16, chunk.Y * 16, chunk.Z * 16);
     }
 
-    private ChunkRenderType renderType = ChunkRenderType.Empty;
+    public ChunkRenderType renderType = ChunkRenderType.Empty;
 
     public override void Render(bool isShadowPass)
     {
-        bool allowedUpdateFrame = (Time.Frame + Chunk.X + (Time.Frame * 2) + Chunk.Z) % 4 == 1;
-
-        if (Chunk.isDirty && !isShadowPass && allowedUpdateFrame)
-        {
-            UpdateRender();
-            Chunk.Optimize();
-        }
-
-
         RenderChunk(isShadowPass);
     }
 
-    private void UpdateRender()
+    public void Update()
+    {
+        bool allowedUpdateFrame = (Time.Frame + Chunk.X + (Time.Frame * 2) + Chunk.Z) % 4 == 1;
+
+        if (Chunk.isDirty && allowedUpdateFrame)
+        {
+            UpdateGeo();
+            Chunk.Optimize();
+        }
+    }
+
+    private void UpdateGeo()
     {
         if (modelObjectGlId == -1)
         {
@@ -50,7 +52,7 @@ public class ChunkRenderer : Renderer
         {
             short blockType = Chunk.GetBlock(0, 0, 0);
             Block block = Registry.GetBlock(blockType);
-            if (block == null || !block.isVisible)
+            if (block == null || !block.Visible)
             {
                 renderType = ChunkRenderType.Empty;
                 return;
@@ -94,23 +96,13 @@ public class ChunkRenderer : Renderer
         if (renderType == ChunkRenderType.Empty)
             return;
 
-        if (!isShadowPass)
-        {
-            RenderData.BlockTexture.Use(TextureUnit.Texture0);
-        }
-
         GL.BindVertexArray(modelObjectGlId);
         GL.DrawElements(PrimitiveType.Triangles, indSize, DrawElementsType.UnsignedInt, 0);
     }
 
     public override ShaderProgram? GetShader()
     {
-        if (renderType == ChunkRenderType.Solid)
-        {
-            return RenderData.SingleBlockShader;
-        }
-
-        return RenderData.DefaultShader;
+        return null;
     }
 
     private OpenTK.Mathematics.Matrix4 modelMatrix;

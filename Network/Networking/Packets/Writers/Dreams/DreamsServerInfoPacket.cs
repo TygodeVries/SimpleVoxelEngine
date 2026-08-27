@@ -2,7 +2,7 @@
 
 public class DreamsServerInfoPacket : PacketWriter
 {
-    // #TODO add things like name, MOTD that sort of stuff
+    // #TODO add things like Name, MOTD that sort of stuff
     public DreamsServerInfoPacket()
     {
 

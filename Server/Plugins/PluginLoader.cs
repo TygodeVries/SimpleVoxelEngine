@@ -1,5 +1,4 @@
-﻿using Shared.Worlds;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 
@@ -8,6 +7,7 @@ namespace Server.Plugins;
 public class PluginLoader
 {
     public static TextureBuilder blockTextureBuilder = new TextureBuilder();
+    public static TextureBuilder itemTextureBuilder = new TextureBuilder();
     internal static void LoadAllPlugins()
     {
         Stopwatch sw = Stopwatch.StartNew();
@@ -144,16 +144,20 @@ public class PluginLoader
 
     private static void LoadTextures(string path)
     {
-        string blockTexturePath = $"{path}/Blocks";
-        string[] files = Directory.GetFiles(blockTexturePath);
-        Console.WriteLine($"Loading {files.Length} block textures for this plugin from {path}/Blocks...");
+        LoadTexturesTo($"{path}/Blocks", blockTextureBuilder);
+        LoadTexturesTo($"{path}/Items", itemTextureBuilder);
+    }
 
-        foreach (string file in files)
+    private static void LoadTexturesTo(string path, TextureBuilder textureBuilder)
+    {
+        string texturePath = $"{path}";
+        string[] textureFiles = Directory.GetFiles(texturePath);
+        Console.WriteLine($"Loading {textureFiles.Length} textures for this plugin from {path}...");
+
+        foreach (string file in textureFiles)
         {
-            blockTextureBuilder.AddTexture(file);
-            string name = Path.GetFileNameWithoutExtension(file);
-            BlockTextureAtlas.textureNames.Add(name);
-            Console.WriteLine($"Loaded block texture {name}!");
+            string name = textureBuilder.AddTexture(file);
+            Console.WriteLine($"- Loaded block Texture '{name}'");
         }
     }
 

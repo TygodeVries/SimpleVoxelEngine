@@ -57,7 +57,7 @@ public class ServerNetwork
             futureConnections.Add(dreamsConnection);
             dreamsConnections.Add(dreamsConnection.id, dreamsConnection);
 
-            Console.WriteLine("Added dreams user with id: " + dreamsConnection.id);
+            Console.WriteLine("Added dreams user with RegistryId: " + dreamsConnection.id);
             // When a connection wants to send a packet, we need to pass it to dreams instead.
             dreamsConnection.OnSendPacket += (Packet packet) =>
             {
@@ -112,20 +112,28 @@ public class ServerNetwork
         // First send the textures
         TexturepackPacket texturepackPacket = new TexturepackPacket();
         texturepackPacket.textureType = TextureType.BLOCKS;
-        texturepackPacket.names = BlockTextureAtlas.textureNames;
+        texturepackPacket.names = PluginLoader.blockTextureBuilder.GetNames();
         texturepackPacket.textureResolution = PluginLoader.blockTextureBuilder.TextureResolution;
         texturepackPacket.textureData = PluginLoader.blockTextureBuilder.GetTexture();
         connection.SendPacket(texturepackPacket.Write());
 
-        // THEN the blocks second.
-        BlockDataPacket blockDataPacket = new BlockDataPacket();
-        blockDataPacket.BlockData = Registry.SaveAll(); // #TODO cache this!
-        connection.SendPacket(blockDataPacket.Write());
+        // The item textures
+        texturepackPacket = new TexturepackPacket();
+        texturepackPacket.textureType = TextureType.ITEMS;
+        texturepackPacket.names = PluginLoader.itemTextureBuilder.GetNames();
+        texturepackPacket.textureResolution = PluginLoader.itemTextureBuilder.TextureResolution;
+        texturepackPacket.textureData = PluginLoader.itemTextureBuilder.GetTexture();
+        connection.SendPacket(texturepackPacket.Write());
+
+        // THEN the registry second.
+        RegistryDataPacket registryPacket = new RegistryDataPacket();
+        registryPacket.Data = Registry.SaveAll(); // #TODO cache this!
+        connection.SendPacket(registryPacket.Write());
 
 
         OnConnect?.Invoke(connection);
 
-        Player player = new Player(connection);
+        PlayerEntity player = new PlayerEntity(connection);
 
         // Load all world data
         Multiverse.SendWorldData(connection, Multiverse.GetMainWorld());

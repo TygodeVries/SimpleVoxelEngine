@@ -7,7 +7,7 @@ public class DefaultBlocks
     public static void Register()
     {
         AIR = Registry.CreateBlock("air");
-        AIR.isVisible = false;
-        AIR.isSolid = false;
+        AIR.Visible = false;
+        AIR.Solid = false;
     }
 }

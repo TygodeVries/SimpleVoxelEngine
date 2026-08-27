@@ -4,6 +4,7 @@ public class Registry
 {
     public static bool InRegistryStage = false;
     private static List<Block> blocks = new List<Block>();
+    private static List<Item> itemTypes = new List<Item>();
 
     public static byte[] SaveAll()
     {
@@ -17,6 +18,15 @@ public class Registry
             byte[] blockData = block.Serialize();
             writer.Write(blockData.Length);
             writer.Write(blockData);
+        }
+
+        writer.Write(itemTypes.Count);
+
+        foreach (Item item in itemTypes)
+        {
+            byte[] itemData = item.Serialize();
+            writer.Write(itemData.Length);
+            writer.Write(itemData);
         }
 
         writer.Flush();
@@ -40,19 +50,39 @@ public class Registry
 
             LoadBlock(mem);
         }
+
+        int itemCount = reader.ReadInt32();
+
+        for (int i = 0; i < itemCount; i++)
+        {
+            int dataL = reader.ReadInt32();
+            byte[] mem = reader.ReadBytes(dataL);
+
+            LoadItem(mem);
+        }
     }
 
     public static event Action<Block>? OnBlockRegister;
 
-    public static Block LoadBlock(byte[] data)
+    private static Block LoadBlock(byte[] data)
     {
         Block block = new Block();
         block.Deserialize(data);
         blocks.Add(block);
 
-        Console.WriteLine($"Loaded block {block.name}");
+        Console.WriteLine($"Loaded Block of Type: '{block.Identifier}'");
         OnBlockRegister?.Invoke(block);
         return block;
+    }
+
+    private static Item LoadItem(byte[] data)
+    {
+        Item itemType = new Item();
+        itemType.Deserialize(data);
+        itemTypes.Add(itemType);
+
+        Console.WriteLine($"Loaded Item of Type: '{itemType.Name}'");
+        return itemType;
     }
 
     public static Block CreateBlock(string name)
@@ -72,7 +102,7 @@ public class Registry
     {
         return blocks.First(o =>
         {
-            return o.name == name;
+            return o.Identifier == name;
         });
     }
 
@@ -81,5 +111,33 @@ public class Registry
         if (id >= blocks.Count)
             return null;
         return blocks[id];
+    }
+
+    public static Item CreateItem(string name)
+    {
+        if (!InRegistryStage)
+        {
+            Console.WriteLine("CreateItem() can only be called in OnRegister()");
+            throw new Exception("CreateItem() can only be called in OnRegister()");
+        }
+
+        Item item = new Item((short)blocks.Count, name);
+        itemTypes.Add(item);
+        return item;
+    }
+
+    public static Item? GetItem(string name)
+    {
+        return itemTypes.FirstOrDefault(o =>
+        {
+            return o.Name == name;
+        });
+    }
+
+    public static Item? GetItem(int id)
+    {
+        if (id >= itemTypes.Count)
+            return null;
+        return itemTypes[id];
     }
 }

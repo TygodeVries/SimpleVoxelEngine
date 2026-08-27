@@ -1,13 +1,13 @@
 ﻿namespace Shared.Networking;
 
-public class PlaceBlockPacket : PacketWriter
+public class SetBlockPacket : PacketWriter
 {
     public short Type;
     public int X;
     public int Y;
     public int Z;
 
-    public PlaceBlockPacket()
+    public SetBlockPacket()
     {
 
     }
@@ -22,7 +22,7 @@ public class PlaceBlockPacket : PacketWriter
 
     public override Packet Write()
     {
-        Packet packet = new Packet(PacketType.PlaceBlock);
+        Packet packet = new Packet(PacketType.SetBlock);
 
         packet.WriteInt(Type);
         packet.WriteInt(X);
@@ -34,6 +34,6 @@ public class PlaceBlockPacket : PacketWriter
 
     public override PacketType WriterType()
     {
-        return PacketType.PlaceBlock;
+        return PacketType.SetBlock;
     }
 }

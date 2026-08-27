@@ -11,6 +11,13 @@ public struct Vector2
         Y = y;
     }
 
+    public Vector2(OpenTK.Mathematics.Vector2 vector)
+    {
+        X = vector.X;
+        Y = vector.Y;
+    }
+
+
     public static Vector2 operator +(Vector2 a, Vector2 b)
     {
         return new Vector2(
@@ -80,6 +87,19 @@ public struct Vector2
     public OpenTK.Mathematics.Vector2 ToOpenTK()
     {
         return new OpenTK.Mathematics.Vector2(X, Y);
+    }
+
+    public static OpenTK.Mathematics.Vector2[] ArrayToOpenTK(Vector2[] vector2s)
+    {
+        OpenTK.Mathematics.Vector2[] result =
+            new OpenTK.Mathematics.Vector2[vector2s.Length];
+
+        for (int i = 0; i < vector2s.Length; i++)
+        {
+            result[i] = vector2s[i].ToOpenTK();
+        }
+
+        return result;
     }
 
 

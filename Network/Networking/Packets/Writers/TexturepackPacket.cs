@@ -2,12 +2,15 @@
 
 public class TexturepackPacket : PacketWriter
 {
-    public List<string> names = new List<string>();
+    public List<string>? names;
     public TextureType textureType;
     public byte[] textureData;
     public int textureResolution;
     public override Packet Write()
     {
+        if (names == null)
+            throw new NullReferenceException("Names must be passed for this packet to be valid!");
+
         Packet packet = new Packet(WriterType());
 
         packet.WriteInt((int)textureType);
@@ -32,6 +35,7 @@ public class TexturepackPacket : PacketWriter
 
     public override void Read(Packet packet)
     {
+        names = new List<string>();
         textureType = (TextureType)packet.ReadInt();
         textureResolution = packet.ReadInt();
 
@@ -48,5 +52,6 @@ public class TexturepackPacket : PacketWriter
 
 public enum TextureType
 {
-    BLOCKS
+    BLOCKS,
+    ITEMS
 }

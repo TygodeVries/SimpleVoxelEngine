@@ -6,6 +6,7 @@ using Shared.Worlds;
 
 namespace Client;
 
+// #TODO some packets should NOT be in here.
 public class LocalWorld
 {
     public static World World { get; private set; } = new World();
@@ -32,27 +33,27 @@ public class LocalWorld
 
     private static void Registry_OnBlockRegister(Block obj)
     {
-        BlockTexture? blockTexture = obj.texture;
+        BlockTexture? blockTexture = obj.Texture;
         if (blockTexture == null)
             return;
 
-        RenderData.BlockTexturesMap.AddMapping(blockTexture.Up, obj.id, BlockFace.Up);
-        RenderData.BlockTexturesMap.AddMapping(blockTexture.Down, obj.id, BlockFace.Down);
-        RenderData.BlockTexturesMap.AddMapping(blockTexture.Left, obj.id, BlockFace.Left);
-        RenderData.BlockTexturesMap.AddMapping(blockTexture.Right, obj.id, BlockFace.Right);
-        RenderData.BlockTexturesMap.AddMapping(blockTexture.Forward, obj.id, BlockFace.Forward);
-        RenderData.BlockTexturesMap.AddMapping(blockTexture.Backward, obj.id, BlockFace.Backward);
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Up, obj.RegistryId, BlockFace.Up);
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Down, obj.RegistryId, BlockFace.Down);
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Left, obj.RegistryId, BlockFace.Left);
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Right, obj.RegistryId, BlockFace.Right);
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Forward, obj.RegistryId, BlockFace.Forward);
+        RenderData.BlockTexturesMap.AddMapping(blockTexture.Backward, obj.RegistryId, BlockFace.Backward);
     }
 
     private static int localPlayerId = -1;
     private static void OnPacket(Shared.Networking.Packet packet)
     {
-        if (packet.GetPacketType() == PacketType.BlockData)
+        if (packet.GetPacketType() == PacketType.RegistryData)
         {
-            BlockDataPacket blockData = new BlockDataPacket();
-            blockData.Read(packet);
+            RegistryDataPacket regData = new RegistryDataPacket();
+            regData.Read(packet);
 
-            Registry.LoadAll(blockData.BlockData);
+            Registry.LoadAll(regData.Data);
         }
 
         if (packet.GetPacketType() == PacketType.Error)
@@ -79,7 +80,7 @@ public class LocalWorld
                 World.DestroyEntity(currentPlayerEntity);
 
             localPlayerId = authenticatePacket.EntityId;
-            Console.WriteLine("Local Entity Id is: " + localPlayerId);
+            Console.WriteLine("Local Entity RegistryId is: " + localPlayerId);
             LocalPlayer localPlayer = new LocalPlayer();
 
             // Fit ourselfs into the empty slot
@@ -117,7 +118,7 @@ public class LocalWorld
             Entity? entity = World.GetEntityWithId(moveEntityPacket.Id);
             if (entity == null)
             {
-                Console.WriteLine("Invalid entity id for MoveEntityPacket");
+                Console.WriteLine("Invalid entity RegistryId for MoveEntityPacket");
                 return;
             }
 
@@ -140,7 +141,7 @@ public class LocalWorld
             Entity? entity = World.GetEntityWithId(destroyEntityPacket.Id);
             if (entity == null)
             {
-                Console.WriteLine("Invalid entity id for DestroyEntityPacket");
+                Console.WriteLine("Invalid entity RegistryId for DestroyEntityPacket");
                 return;
             }
 
@@ -165,9 +166,9 @@ public class LocalWorld
             World.RemoveChunk(chunk);
         }
 
-        if (packet.GetPacketType() == PacketType.PlaceBlock)
+        if (packet.GetPacketType() == PacketType.SetBlock)
         {
-            PlaceBlockPacket placeBlockPacket = new PlaceBlockPacket();
+            SetBlockPacket placeBlockPacket = new SetBlockPacket();
             placeBlockPacket.Read(packet);
 
             Block? block = Registry.GetBlock(placeBlockPacket.Type);
@@ -180,8 +181,25 @@ public class LocalWorld
         {
             TexturepackPacket texturepackPacket = new TexturepackPacket();
             texturepackPacket.Read(packet);
-            BlockTextureAtlas.textureNames = texturepackPacket.names;
-            RenderData.SetBlockTexture(ImageTexture.LoadFromBytes(texturepackPacket.textureData));
+
+            if (texturepackPacket.textureType == TextureType.BLOCKS)
+            {
+                RenderData.SetBlockTexture(texturepackPacket.names, ImageTexture.LoadFromBytes(texturepackPacket.textureData));
+            }
+            else if (texturepackPacket.textureType == TextureType.ITEMS)
+            {
+                RenderData.SetItemTexture(texturepackPacket.names, ImageTexture.LoadFromBytes(texturepackPacket.textureData));
+            }
+
+        }
+
+        if (packet.GetPacketType() == PacketType.InventoryChange)
+        {
+            InventoryChangePacket icp = new InventoryChangePacket();
+            icp.Read(packet);
+
+
+            LocalInventory.SetItem(icp.slot, icp.itemStack);
         }
     }
 }
