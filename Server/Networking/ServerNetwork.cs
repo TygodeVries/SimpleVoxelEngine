@@ -18,7 +18,10 @@ public class ServerNetwork
         // Start the classic TCP Listener...
         listener = new TcpListener(System.Net.IPAddress.Any, port);
         listener.Start();
+    }
 
+    public bool StartDreams()
+    {
         // If Dreams is enabled
         try
         {
@@ -30,15 +33,17 @@ public class ServerNetwork
 
             SetupDreams(tcpConnection);
             connections.Add(tcpConnection);
+
+            return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Could not connect with the dreams server. Reason: {ex}");
+            return false;
         }
     }
 
     private TcpConnection? dreamsServerConnection;
-    public void SetupDreams(TcpConnection dreamsConnection)
+    private void SetupDreams(TcpConnection dreamsConnection)
     {
         this.dreamsServerConnection = dreamsConnection;
         dreamsConnection.isDreamsAuthorizedServer = true;

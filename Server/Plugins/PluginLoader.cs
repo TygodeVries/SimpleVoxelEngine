@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Spectre.Console;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 
@@ -8,162 +9,90 @@ public class PluginLoader
 {
     public static TextureBuilder blockTextureBuilder = new TextureBuilder();
     public static TextureBuilder itemTextureBuilder = new TextureBuilder();
-    internal static void LoadAllPlugins()
-    {
-        Stopwatch sw = Stopwatch.StartNew();
-        Console.ForegroundColor = ConsoleColor.White;
-        Console.WriteLine("--- Loading Plugins ---");
 
+    internal static async Task LoadAllPluginsAsync()
+    {
         if (!Directory.Exists("plugins"))
         {
             Directory.CreateDirectory("plugins");
         }
 
         string[] dirs = Directory.GetDirectories("plugins");
+        if (dirs.Length == 0) return;
 
-        int successCount = 0;
-
-        foreach (string dir in dirs)
-        {
-            bool success = LoadPlugin(dir);
-
-            if (success)
+        await AnsiConsole.Progress()
+            .Columns(new ProgressColumn[]
             {
-                successCount++;
-            }
-            else
+                new TaskDescriptionColumn(),
+                new SpinnerColumn(Spinner.Known.Dots)
+            })
+            .StartAsync(async ctx =>
             {
-                Console.WriteLine($"Failed to load {dir}.");
-            }
-        }
+                Task[] loadingTasks = new Task[dirs.Length];
 
-        if (successCount == dirs.Length)
-        {
-            Console.ForegroundColor = ConsoleColor.Green;
-        }
-        else
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-        }
-        Console.WriteLine($"Loaded {successCount}/{dirs.Length} plugins in {sw.ElapsedMilliseconds}ms!");
-        Console.ForegroundColor = ConsoleColor.White;
+                for (int i = 0; i < dirs.Length; i++)
+                {
+                    string dir = dirs[i];
+                    loadingTasks[i] = LoadPluginAsync(dir, ctx);
+                }
+
+                await Task.WhenAll(loadingTasks);
+            });
     }
 
-    public static bool LoadPlugin(string pluginPath)
+    private static async Task LoadPluginAsync(string pluginPath, ProgressContext ctx)
     {
         string pluginName = Path.GetFileName(pluginPath);
 
-        Console.WriteLine($"Loading plugin {pluginName}...");
+        ProgressTask task = ctx.AddTask($"[white]Initializing {pluginName}...[/]");
 
-
-        string pluginDataPath = $"{pluginPath}/plugin.json";
+        string pluginDataPath = Path.Combine(pluginPath, "plugin.json");
         if (!File.Exists(pluginDataPath))
         {
-            Console.WriteLine($"Missing plugin.json inside of {pluginName}.");
-            return false;
+            task.Description = $"[red]X {pluginName} (Missing plugin.json)[/]";
+            task.StopTask();
+            return;
         }
 
-        string pluginDataContent = File.ReadAllText(pluginDataPath);
-        PluginData? pluginData = JsonSerializer.Deserialize<PluginData>(pluginDataContent);
-
-        if (pluginData == null)
+        try
         {
-            Console.WriteLine($"Plugin.json could not be loaded {pluginName}.");
-            return false;
+            string pluginDataContent = await File.ReadAllTextAsync(pluginDataPath);
+            PluginData? pluginData = JsonSerializer.Deserialize<PluginData>(pluginDataContent);
+
+            if (pluginData == null)
+            {
+                task.Description = $"[red]X {pluginName} (Malformed plugin.json)[/]";
+                task.StopTask();
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            task.Description = $"[red]X {pluginName} failed reading config: {ex.Message}[/]";
+            task.StopTask();
+            return;
         }
 
-        string sourceDataPath = $"{pluginPath}/Source";
+        string sourceDataPath = Path.Combine(pluginPath, "Source");
         if (Directory.Exists(sourceDataPath))
         {
-            Console.WriteLine("Found code in this plugin");
-            CompileAndLoad(sourceDataPath);
-        }
-        else
-        {
-            Console.WriteLine($"No source directory was found (expected {sourceDataPath}).");
+            task.Description = $"[white]Compiling {pluginName}...[/]";
+            await CompileAndLoadAsync(sourceDataPath);
         }
 
-        string assetsData = $"{pluginPath}/Textures";
-
+        string assetsData = Path.Combine(pluginPath, "Textures");
         if (Directory.Exists(assetsData))
         {
-            Console.WriteLine("Found textures in this plugin!");
-            LoadTextures(assetsData);
-        }
-        else
-        {
-            Console.WriteLine($"No textures directory was found (expected {assetsData}).");
+            task.Description = $"[white]Loading assets for {pluginName}...[/]";
+            LoadAssets(assetsData);
         }
 
-        return true;
+        task.Description = $"[lime]Loaded {pluginName}[/]";
+        task.StopTask();
     }
 
-    internal static void RunAll()
+    private static async Task CompileAndLoadAsync(string path)
     {
-        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-        {
-            foreach (Type type in assembly.GetTypes())
-            {
-                if (type.IsAbstract)
-                    continue;
-
-                if (!typeof(Plugin).IsAssignableFrom(type))
-                    continue;
-
-                Plugin? plugin = Activator.CreateInstance(type) as Plugin;
-
-                if (plugin == null)
-                    continue;
-
-                plugin.OnLoad();
-            }
-        }
-    }
-
-    internal static void RegisterAll()
-    {
-        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-        {
-            foreach (Type type in assembly.GetTypes())
-            {
-                if (type.IsAbstract)
-                    continue;
-
-                if (!typeof(Plugin).IsAssignableFrom(type))
-                    continue;
-
-                Plugin? plugin = Activator.CreateInstance(type) as Plugin;
-
-                if (plugin == null)
-                    continue;
-
-                plugin.OnRegister();
-            }
-        }
-    }
-
-    private static void LoadTextures(string path)
-    {
-        LoadTexturesTo($"{path}/Blocks", blockTextureBuilder);
-        LoadTexturesTo($"{path}/Items", itemTextureBuilder);
-    }
-
-    private static void LoadTexturesTo(string path, TextureBuilder textureBuilder)
-    {
-        string texturePath = $"{path}";
-        string[] textureFiles = Directory.GetFiles(texturePath);
-        Console.WriteLine($"Loading {textureFiles.Length} textures for this plugin from {path}...");
-
-        foreach (string file in textureFiles)
-        {
-            string name = textureBuilder.AddTexture(file);
-            Console.WriteLine($"- Loaded block Texture '{name}'");
-        }
-    }
-
-    private static bool CompileAndLoad(string path)
-    {
-        Console.WriteLine("Compiling plugin...");
         ProcessStartInfo startInfo = new()
         {
             FileName = "dotnet",
@@ -176,38 +105,62 @@ public class PluginLoader
 
         using Process process = Process.Start(startInfo)!;
 
-        string output = process.StandardOutput.ReadToEnd();
-        string errors = process.StandardError.ReadToEnd();
-
-        process.WaitForExit();
-
-        Console.WriteLine(output);
-
-        if (process.ExitCode != 0)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Plugin compilation failed:");
-            Console.WriteLine(errors);
-            Console.WriteLine("Press enter to continue.");
-            Console.ReadLine();
-            return false;
-        }
-
-        Console.WriteLine("Plugin compiled successfully!");
+        await process.WaitForExitAsync();
 
         string dllPath = Path.GetFullPath(
-    Path.Combine(path, "bin", "Release", "net10.0", "plugin.dll")
-);
+            Path.Combine(path, "bin", "Release", "net10.0", "plugin.dll")
+        );
 
-        if (!File.Exists(dllPath))
+        if (File.Exists(dllPath))
         {
-            Console.WriteLine($"Compiled plugin DLL not found: {dllPath}");
-            return false;
+            Assembly.LoadFile(dllPath);
         }
+    }
 
-        Assembly.LoadFile(dllPath);
+    private static void LoadAssets(string path)
+    {
+        Thread.Sleep(400);
+        LoadTexturesTo(Path.Combine(path, "Blocks"), blockTextureBuilder);
+        LoadTexturesTo(Path.Combine(path, "Items"), itemTextureBuilder);
+    }
 
-        return true;
+    private static void LoadTexturesTo(string path, TextureBuilder textureBuilder)
+    {
+        if (!Directory.Exists(path)) return;
+
+        string[] textureFiles = Directory.GetFiles(path);
+        foreach (string file in textureFiles)
+        {
+            textureBuilder.AddTexture(file);
+        }
+    }
+
+    internal static void RunAll()
+    {
+        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            foreach (Type type in assembly.GetTypes())
+            {
+                if (type.IsAbstract || !typeof(Plugin).IsAssignableFrom(type)) continue;
+
+                Plugin? plugin = Activator.CreateInstance(type) as Plugin;
+                plugin?.OnLoad();
+            }
+        }
+    }
+
+    internal static void RegisterAll()
+    {
+        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            foreach (Type type in assembly.GetTypes())
+            {
+                if (type.IsAbstract || !typeof(Plugin).IsAssignableFrom(type)) continue;
+
+                Plugin? plugin = Activator.CreateInstance(type) as Plugin;
+                plugin?.OnRegister();
+            }
+        }
     }
 }
 

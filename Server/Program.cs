@@ -1,8 +1,10 @@
-﻿using Server.Networking;
+﻿
+
+using Server.Networking;
 using Server.Plugins;
 using Server.Worlds;
-using Shared.Networking;
 using Shared.Worlds;
+using Spectre.Console;
 using System.Diagnostics;
 public class Program
 {
@@ -10,30 +12,47 @@ public class Program
 
     public static void Main()
     {
-        PluginLoader.LoadAllPlugins();
+        AnsiConsole.MarkupLine("[white]Loading Plugins...[/]");
+        Stopwatch fullTime = Stopwatch.StartNew();
+        PluginLoader.LoadAllPluginsAsync().Wait();
+
+        AnsiConsole.MarkupLine("Loading Registry...");
         Registry.InRegistryStage = true;
         DefaultBlocks.Register();
         PluginLoader.RegisterAll();
         Registry.InRegistryStage = false;
 
-        Console.WriteLine("--- Loading Server ---");
+        Stopwatch serverTime = Stopwatch.StartNew();
 
-        Stopwatch sw = Stopwatch.StartNew();
-
+        AnsiConsole.MarkupLine("Loading World...");
         Multiverse.Start();
+
+
         PluginLoader.RunAll();
+        AnsiConsole.Status()
+            .Start("Starting Server...", ctx =>
+            {
+                server.Start(5050);
 
-        Console.WriteLine("Starting server...");
+                AnsiConsole.MarkupLine($"[Lime]Server has started in {fullTime.ElapsedMilliseconds}ms! (Server: {serverTime.ElapsedMilliseconds}ms)[/]");
+            });
 
-        server.Start(5050);
-        server.OnConnect += (Connection c) =>
+
+        bool dreamsConnected = false;
+        AnsiConsole.Status()
+            .Start("Connecting With Dreams...", ctx =>
+            {
+                dreamsConnected = server.StartDreams();
+            });
+
+        if (dreamsConnected)
         {
-            Console.WriteLine("New Connection!");
-        };
-
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"Server has started in {sw.ElapsedMilliseconds}ms!");
-        Console.ForegroundColor = ConsoleColor.White;
+            AnsiConsole.Markup("[lime]Connected with Dreams.[/]");
+        }
+        else
+        {
+            AnsiConsole.Markup("[yellow]Could not connect with Dreams.[/]");
+        }
 
         while (true)
         {

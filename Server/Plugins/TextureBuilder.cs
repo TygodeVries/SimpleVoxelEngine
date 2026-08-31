@@ -13,12 +13,15 @@ public class TextureBuilder
 
     public string AddTexture(string path)
     {
-        string name = Path.GetFileNameWithoutExtension(path);
+        lock (textures)
+        {
+            string name = Path.GetFileNameWithoutExtension(path);
 
-        textureIds.Add(name);
-        textures.Add(File.ReadAllBytes(path));
+            textureIds.Add(name);
+            textures.Add(File.ReadAllBytes(path));
 
-        return name;
+            return name;
+        }
     }
 
     public List<string> GetNames()
