@@ -45,8 +45,17 @@ public class LocalPlayer : Entity
         }
     }
 
+
+    private bool enableAO = false;
     private void Interact()
     {
+        if (Keyboard.Current.IsPressedThisFrame(Keys.F9))
+        {
+            enableAO = !enableAO;
+            int status = enableAO ? 1 : 0;
+            RenderData.DefaultChunkShader.SetInt("u_DisableAO", status);
+        }
+
         if (Mouse.Current.LeftPressedThisFrame())
         {
             PlayerInteractPacket playerInteractPacket = new PlayerInteractPacket();
