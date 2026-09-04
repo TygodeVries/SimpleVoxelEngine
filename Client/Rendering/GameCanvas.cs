@@ -150,7 +150,7 @@ public class GameCanvas : GameWindow
             fpsCounterStopwatch.Restart();
             Console.WriteLine("FPS: " + frameCount);
 
-            Title = $"Game --- FPS: {frameCount}";
+            Title = $"Game --- FPS: {frameCount} --- Chunks To Render: {ChunkRenderer.RequestingUpdate.Count}";
             frameCount = 0;
         }
 
@@ -369,6 +369,18 @@ public class GameCanvas : GameWindow
         foreach (ChunkRenderer chunkRenderer in chunkRenderers)
         {
             chunkRenderer.Update();
+        }
+
+        // Update a max amount of chunks at a time!
+        for (int i = 0; i < 10; i++)
+        {
+            ChunkRenderer? ch = ChunkRenderer.PopNearest();
+            if (ch != null)
+            {
+                ch?.Regenerate();
+            }
+            else
+                break;
         }
 
         if (Keyboard.Current.IsPressedThisFrame(OpenTK.Windowing.GraphicsLibraryFramework.Keys.F7))

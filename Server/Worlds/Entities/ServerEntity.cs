@@ -1,6 +1,4 @@
-﻿
-using Shared.Mathf;
-using Shared.Networking;
+﻿using Shared.Networking;
 using Shared.Worlds;
 
 namespace Server.Worlds;
@@ -23,6 +21,20 @@ public abstract class ServerEntity : Entity
 
         Program.server.BroadcastPacket(spawnEntityPacket.Write());
 
+        // When we move, send a packet
+        OnTeleport += () =>
+        {
+            MoveEntityPacket moveEntityPacket = new MoveEntityPacket()
+            {
+                Id = Id,
+                X = Position.X,
+                Y = Position.Y,
+                Z = Position.Z
+            };
+
+            Program.server.BroadcastPacket(moveEntityPacket.Write());
+        };
+
         base.OnSpawn();
     }
 
@@ -37,25 +49,4 @@ public abstract class ServerEntity : Entity
 
         base.OnDestroy();
     }
-
-    public event Action<EntityMoveArgs>? OnMove;
-
-    public void Teleport(Vector3 position)
-    {
-        Vector3 last = this.position;
-
-        this.position = position;
-        OnMove?.Invoke(new EntityMoveArgs(last, position));
-
-        MoveEntityPacket moveEntityPacket = new MoveEntityPacket()
-        {
-            Id = Id,
-            X = position.X,
-            Y = position.Y,
-            Z = position.Z
-        };
-
-        Program.server.BroadcastPacket(moveEntityPacket.Write());
-    }
-
 }

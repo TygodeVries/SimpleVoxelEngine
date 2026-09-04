@@ -11,7 +11,7 @@ public abstract class VisibleEntity : Entity
 {
     private MeshRenderer renderer = new MeshRenderer(RenderData.DefaultChunkShader!);
 
-    // Track the smoothed visual position separately from the physical entity position
+    // Track the smoothed visual Position separately from the physical entity Position
     private Vector3 visualPosition;
     private bool isFirstFrame = true;
 
@@ -43,7 +43,7 @@ public abstract class VisibleEntity : Entity
 
     public void ApplyVisuals()
     {
-        Vector3 targetPosition = new Vector3(position.X, position.Y, position.Z);
+        Vector3 targetPosition = new Vector3(Position.X, Position.Y, Position.Z);
 
         if (isFirstFrame)
         {

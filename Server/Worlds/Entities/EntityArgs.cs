@@ -16,18 +16,6 @@ public class PlayerChangeSlotArgs
     }
 }
 
-public class EntityMoveArgs
-{
-    public Vector3 lastPosition { get; private set; }
-    public Vector3 newPosition { get; private set; }
-
-    public EntityMoveArgs(Vector3 lastPosition, Vector3 newPosition)
-    {
-        this.lastPosition = lastPosition;
-        this.newPosition = newPosition;
-    }
-}
-
 public class PlayerClickBlocksArgs
 {
     public Vector3 Block { get; set; }

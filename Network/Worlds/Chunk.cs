@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using Shared.Mathf;
+using System.Runtime.InteropServices;
 
 namespace Shared.Worlds;
 
@@ -13,7 +14,11 @@ public class Chunk
         this.X = x;
         this.Y = y;
         this.Z = z;
+
+        Center = new Vector3((X * 16) + 8, (Y * 16) + 8, (Z * 16) + 8);
     }
+
+    public Vector3 Center { get; private set; }
 
     public byte[] GetByteArray()
     {
@@ -111,7 +116,7 @@ public class Chunk
             // Block type two, the new kid on the block
             Array.Copy(BitConverter.GetBytes(blockType), 0, data, SIMPLE_CHUNK_DATA_SIZE + 2, 2);
 
-            // Calculate the position of the block in memory
+            // Calculate the Position of the block in memory
             int index = x + (y * 16) + (z * 16 * 16);
 
             data[index] = 1;
@@ -133,7 +138,7 @@ public class Chunk
             {
                 byte blockIndex = (byte)blockMap.IndexOf(blockType);
 
-                // Calculate the position of the block in memory
+                // Calculate the Position of the block in memory
                 int index = x + (y * 16) + (z * 16 * 16);
 
                 // Change the block to the new type.
@@ -214,7 +219,7 @@ public class Chunk
                 blockMap[i] = BitConverter.ToInt16(data, (i * 2) + SIMPLE_CHUNK_DATA_SIZE);
             }
 
-            // Calculate the position of the block in memory
+            // Calculate the Position of the block in memory
             int index = x + (y * 16) + (z * 16 * 16);
 
             // Get the index to the block
@@ -227,7 +232,7 @@ public class Chunk
         // A chunk with more then 256 blocks (rare!)
         if (type == ChunkType.Complex)
         {
-            // Calculate the position of the block in memory
+            // Calculate the Position of the block in memory
             int index = (x + (y * 16) + (z * 16 * 16)) * 2;
 
             // Return the value at that postition

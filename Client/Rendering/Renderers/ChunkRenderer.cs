@@ -7,17 +7,50 @@ namespace Client.Rendering;
 
 public class ChunkRenderer : Renderer
 {
+    public static List<ChunkRenderer> RequestingUpdate = new List<ChunkRenderer>(256);
+    public static ChunkRenderer? PopNearest()
+    {
+        int count = RequestingUpdate.Count;
+        if (count == 0) return null;
+        if (count == 1)
+        {
+            ChunkRenderer singleChunk = RequestingUpdate[0];
+            RequestingUpdate.Clear();
+            return singleChunk;
+        }
+
+        Vector3 cameraPosition = Camera.Position;
+
+        int nearestIndex = 0;
+        float minSqrDistance = float.MaxValue;
+
+        for (int i = 0; i < count; i++)
+        {
+            float sqrDist = (RequestingUpdate[i].Chunk.Center - cameraPosition).Length;
+
+            if (sqrDist < minSqrDistance)
+            {
+                minSqrDistance = sqrDist;
+                nearestIndex = i;
+            }
+        }
+
+        ChunkRenderer nearestChunk = RequestingUpdate[nearestIndex];
+
+        int lastIndex = count - 1;
+        if (nearestIndex != lastIndex)
+        {
+            RequestingUpdate[nearestIndex] = RequestingUpdate[lastIndex];
+        }
+        RequestingUpdate.RemoveAt(lastIndex);
+
+        return nearestChunk;
+    }
+
+
     public Chunk Chunk { get; set; }
-    public Vector3 Center;
-    public Vector3 Size;
     public ChunkRenderer(Chunk chunk)
     {
-        Center = new Vector3(
-            (chunk.X * 16) + 8,
-            (chunk.Y * 16) + 8,
-            (chunk.Z * 16) + 8);
-
-        Size = new Vector3(16, 16, 16);
 
         this.Chunk = chunk;
         modelMatrix = OpenTK.Mathematics.Matrix4.CreateTranslation(chunk.X * 16, chunk.Y * 16, chunk.Z * 16);
@@ -32,16 +65,20 @@ public class ChunkRenderer : Renderer
 
     public void Update()
     {
-        bool allowedUpdateFrame = (Time.Frame + Chunk.X + (Time.Frame * 2) + Chunk.Z) % 4 == 1;
-
-        if (Chunk.isDirty && allowedUpdateFrame)
+        if (Chunk.isDirty)
         {
-            UpdateGeo();
-            Chunk.Optimize();
+            Chunk.isDirty = false;
+            RequestingUpdate.Add(this);
         }
     }
 
-    private void UpdateGeo()
+    public void Regenerate()
+    {
+        Chunk.Optimize();
+        UpdateGeometry();
+    }
+
+    private void UpdateGeometry()
     {
         if (modelObjectGlId == -1)
         {
@@ -83,8 +120,6 @@ public class ChunkRenderer : Renderer
                 renderType = ChunkRenderType.Normal;
             }
         }
-
-        Chunk.isDirty = false;
     }
 
     private int modelObjectGlId = -1;
@@ -118,4 +153,3 @@ public enum ChunkRenderType
     Solid,
     Normal
 }
-

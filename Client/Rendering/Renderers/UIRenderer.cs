@@ -103,7 +103,7 @@ public class UIRenderer : MeshRenderer
     }
 
     /// <summary>
-    /// Gets the top-left position of this UI element in screen pixels.
+    /// Gets the top-left Position of this UI element in screen pixels.
     /// </summary>
     public Vector2 GetTopLeft()
     {
@@ -133,7 +133,7 @@ public class UIRenderer : MeshRenderer
     }
 
     /// <summary>
-    /// Gets the center position of this UI element in screen pixels.
+    /// Gets the center Position of this UI element in screen pixels.
     /// </summary>
     public Vector2 GetCenter()
     {

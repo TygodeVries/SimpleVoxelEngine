@@ -9,6 +9,7 @@ public class World
 
     }
 
+    private BlockFont blockFont = new BlockFont();
     public WorldGenerator WorldGenerator { get; private set; } = new DefaultWorldGenerator();
 
     public void SetWorldGenerator(WorldGenerator worldGenerator)
@@ -64,6 +65,8 @@ public class World
 
     public void SpawnEntity(Entity entity, int forceId = -1)
     {
+        Console.WriteLine($"Spawning entity of type {entity.GetType().Name}");
+
         this.futureEntities.Add(entity);
         entity.SetWorld(this);
 
@@ -78,9 +81,6 @@ public class World
             entity.SetId(forceId);
             IdCount = forceId + 1;
         }
-
-
-        OnEntitySpawn?.Invoke(new OnEntitySpawnArgs(entity));
     }
 
     public List<Entity> GetEntities()
@@ -99,6 +99,7 @@ public class World
     private int IdCount = 0;
     public void DestroyEntity(Entity entity)
     {
+        Console.WriteLine($"Destroying entity of type {entity.GetType().Name}");
         graveYard.Add(entity);
     }
 
@@ -121,6 +122,8 @@ public class World
         {
             entity.OnSpawn();
             entities.Add(entity);
+            Console.WriteLine("Registered Entity");
+            OnEntitySpawn?.Invoke(new OnEntitySpawnArgs(entity));
         }
 
         futureEntities.Clear();
@@ -389,13 +392,49 @@ public class World
         }
     }
 
+    public int FillCharacter(Block type, Vector3 position, char character, Vector3 right, Vector3 up)
+    {
+        bool[,] font = blockFont.GetCharacterGrid(character);
+        int rows = font.GetLength(0);
+        int cols = font.GetLength(1);
+
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < cols; c++)
+            {
+                if (font[r, c])
+                {
+                    int visualRow = rows - 1 - r;
+
+                    Vector3 blockPos = position + (right * c) + (up * visualRow);
+                    SetBlockAt(type, blockPos);
+                }
+            }
+        }
+
+        return cols;
+    }
+
+    public void FillText(Block type, Vector3 position, string text, Vector3 right, Vector3 up, int letterSpacing = 0)
+    {
+        Vector3 cursorPosition = position;
+
+        foreach (char character in text)
+        {
+            int characterWidth = FillCharacter(type, cursorPosition, character, right, up);
+
+            int totalStep = characterWidth + letterSpacing;
+            cursorPosition += right * totalStep;
+        }
+    }
+
     public List<Entity> GetEntitiesNear(Vector3 position, float radius)
     {
         List<Entity> e = new List<Entity>();
 
         foreach (Entity entity in entities)
         {
-            if (Vector3.Distance(entity.position, position) < radius)
+            if (Vector3.Distance(entity.Position, position) < radius)
             {
                 e.Add(entity);
             }
@@ -407,6 +446,16 @@ public class World
     public List<Chunk> GetChunks()
     {
         return chunks.Values.ToList();
+    }
+
+
+    public void PrintEntityDump()
+    {
+        Console.WriteLine($"A list of all entities in this world ({entities.Count} in total): ");
+        foreach (Entity entity in entities)
+        {
+            Console.WriteLine($"{entity.Id}: {entity.GetType().Name}");
+        }
     }
 }
 

@@ -22,5 +22,6 @@ public enum PacketType : byte
     RegistryData = 17,
     SelectSlot = 18,
     PlayerInteract = 19,
-    InventoryChange = 20
+    InventoryChange = 20,
+    SetVelocity = 21
 }

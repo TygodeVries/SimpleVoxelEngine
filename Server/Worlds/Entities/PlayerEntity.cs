@@ -1,4 +1,5 @@
-﻿using Shared.Networking;
+﻿using Shared.Mathf;
+using Shared.Networking;
 using Shared.Worlds;
 
 namespace Server.Worlds;
@@ -34,8 +35,22 @@ public class PlayerEntity : ServerEntity
         {
             GetItemInHand()?.Type.ExecuteBlockRightClick(new ItemClickBlockArgs(this, args.Block, args.Normal));
         };
+
+        OnSetVelocity += () =>
+        {
+            SetVelocityPacket packet = new SetVelocityPacket();
+            packet.X = Velocity.X;
+            packet.Y = Velocity.Y;
+            packet.Z = Velocity.Z;
+            connection.SendPacket(packet.Write());
+        };
     }
 
+    public override void OnSpawn()
+    {
+        base.OnSpawn();
+        UpdateChunks();
+    }
     /// <summary>
     /// Whenever the player changes the slot they are holding.
     /// </summary>
@@ -80,12 +95,17 @@ public class PlayerEntity : ServerEntity
     /// <summary>
     /// The view distance of the player
     /// </summary>
-    private const int ChunkLoadDistance = 5;
+    private const int ChunkLoadDistance = 8;
 
     /// <summary>
     /// The lists of chunks that are loaded
     /// </summary>
     private readonly HashSet<(int X, int Y, int Z)> loadedChunks = new();
+
+    public bool IsChunkLoaded(int X, int Y, int Z)
+    {
+        return loadedChunks.Contains((X, Y, Z));
+    }
 
     // The current chunk we are in
     private int currentChunkX;
@@ -169,21 +189,28 @@ public class PlayerEntity : ServerEntity
         }
     }
 
+    public override void Teleport(Vector3 position)
+    {
+        base.Teleport(position);
+        PlayerMovePacket playerMove = new PlayerMovePacket();
+        playerMove.X = position.X;
+        playerMove.Y = position.Y;
+        playerMove.Z = position.Z;
+
+        Connection.SendPacket(playerMove.Write());
+    }
+
 
     private void HandlePlayerMove(Packet packet)
     {
         PlayerMovePacket playerMovePacket = new PlayerMovePacket();
         playerMovePacket.Read(packet);
 
-        position.X = playerMovePacket.X;
-        position.Y = playerMovePacket.Y;
-        position.Z = playerMovePacket.Z;
+        base.Teleport(new Vector3(playerMovePacket.X, playerMovePacket.Y, playerMovePacket.Z));
 
-        Teleport(position);
-
-        int newChunkX = WorldToChunk(position.X);
-        int newChunkY = WorldToChunk(position.Y);
-        int newChunkZ = WorldToChunk(position.Z);
+        int newChunkX = WorldToChunk(Position.X);
+        int newChunkY = WorldToChunk(Position.Y);
+        int newChunkZ = WorldToChunk(Position.Z);
 
         if (newChunkX == currentChunkX &&
             newChunkY == currentChunkY &&

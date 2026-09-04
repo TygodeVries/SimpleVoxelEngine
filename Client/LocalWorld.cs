@@ -43,6 +43,8 @@ public class LocalWorld
         RenderData.BlockTexturesMap.AddMapping(blockTexture.Right, obj.RegistryId, BlockFace.Right);
         RenderData.BlockTexturesMap.AddMapping(blockTexture.Forward, obj.RegistryId, BlockFace.Forward);
         RenderData.BlockTexturesMap.AddMapping(blockTexture.Backward, obj.RegistryId, BlockFace.Backward);
+
+        RenderData.SingleChunkShader.SetVector4("u_TextureInfo", new OpenTK.Mathematics.Vector4(RenderData.BlockTexturesMap.row, RenderData.BlockTexturesMap.col, 16, 0));
     }
 
     private static int localPlayerId = -1;
@@ -74,6 +76,11 @@ public class LocalWorld
             AuthenticatePacket authenticatePacket = new AuthenticatePacket();
             authenticatePacket.Read(packet);
 
+            if (Program.Version != authenticatePacket.ServerVersion)
+            {
+                throw new Exception($"Versions do not match. Server is on version {authenticatePacket.ServerVersion} but client is on version {Program.Version}.");
+            }
+
             // We don't want to see ourselfs.
             Entity? currentPlayerEntity = World.GetEntityWithId(authenticatePacket.EntityId);
             if (currentPlayerEntity != null)
@@ -85,11 +92,11 @@ public class LocalWorld
 
             // Fit ourselfs into the empty slot
             World.SpawnEntity(localPlayer, authenticatePacket.EntityId);
+            World.Tick();
         }
 
         if (packet.GetPacketType() == Shared.Networking.PacketType.SpawnEntity)
         {
-            Console.WriteLine("Spawning Entity...");
             SpawnEntityPacket spawnEntityPacket = new SpawnEntityPacket();
             spawnEntityPacket.Read(packet);
 
@@ -122,9 +129,23 @@ public class LocalWorld
                 return;
             }
 
-            entity.position.X = moveEntityPacket.X;
-            entity.position.Y = moveEntityPacket.Y;
-            entity.position.Z = moveEntityPacket.Z;
+            entity.Teleport(moveEntityPacket.X, moveEntityPacket.Y, moveEntityPacket.Z);
+            LocalWorld.World.Tick();
+        }
+
+        if (packet.GetPacketType() == PacketType.SetVelocity)
+        {
+            SetVelocityPacket velocityPacket = new SetVelocityPacket();
+            velocityPacket.Read(packet);
+
+            Entity? currentPlayerEntity = World.GetEntityWithId(localPlayerId);
+            if (currentPlayerEntity == null)
+            {
+                World.PrintEntityDump();
+                throw new NullReferenceException("No local player entity could be found!");
+            }
+
+            currentPlayerEntity.SetVelocity(velocityPacket.X, velocityPacket.Y, velocityPacket.Z);
         }
 
         if (packet.GetPacketType() == PacketType.DestroyEntity)
@@ -200,6 +221,20 @@ public class LocalWorld
 
 
             LocalInventory.SetItem(icp.slot, icp.itemStack);
+        }
+
+        if (packet.GetPacketType() == PacketType.PlayerMove)
+        {
+            Entity? currentPlayerEntity = World.GetEntityWithId(localPlayerId);
+            if (currentPlayerEntity == null)
+            {
+                World.PrintEntityDump();
+                throw new NullReferenceException("No local player entity could be found!");
+            }
+
+            PlayerMovePacket playerMove = new PlayerMovePacket();
+
+            currentPlayerEntity.Teleport(playerMove.X, playerMove.Y, playerMove.Z);
         }
     }
 }

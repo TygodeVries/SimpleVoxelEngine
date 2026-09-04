@@ -6,6 +6,8 @@ using System.Diagnostics;
 
 public class Program
 {
+    public static int Version = 0;
+
     private static async Task LookForDeadParentAsync(int parentPid)
     {
         try

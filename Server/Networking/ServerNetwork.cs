@@ -138,16 +138,21 @@ public class ServerNetwork
 
         OnConnect?.Invoke(connection);
 
+
         PlayerEntity player = new PlayerEntity(connection);
+
+        player.OnEntityIdSet += () =>
+        {
+            AuthenticatePacket authenticatePacket = new AuthenticatePacket();
+            authenticatePacket.EntityId = player.Id;
+            authenticatePacket.ServerVersion = Program.Version;
+            connection.SendPacket(authenticatePacket.Write());
+        };
 
         // Load all world data
         Multiverse.SendWorldData(connection, Multiverse.GetMainWorld());
 
         Multiverse.GetMainWorld().SpawnEntity(player);
-
-        AuthenticatePacket authenticatePacket = new AuthenticatePacket();
-        authenticatePacket.EntityId = player.Id;
-        connection.SendPacket(authenticatePacket.Write());
     }
 
     public void BroadcastPacket(Packet packet, Connection? exlude = null)

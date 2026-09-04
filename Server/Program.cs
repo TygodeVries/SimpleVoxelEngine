@@ -8,6 +8,7 @@ using Spectre.Console;
 using System.Diagnostics;
 public class Program
 {
+    public static int Version = 0;
     public static ServerNetwork server = new ServerNetwork();
 
     public static void Main()

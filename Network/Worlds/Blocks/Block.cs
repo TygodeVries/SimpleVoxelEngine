@@ -29,6 +29,8 @@ public class Block
     /// </summary>
     public bool Solid { get; set; } = true;
 
+    public bool Transparent { get; set; } = false;
+
     /// <summary>
     /// Default: True If the block is visible.
     /// Setting it to false will make it not generate any topology.

@@ -9,11 +9,6 @@ namespace Client.Entities;
 
 public class LocalPlayer : Entity
 {
-    public LocalPlayer()
-    {
-        position = new Vector3(0.5f, 30, 0.5f);
-    }
-
     public bool isCrouch = false;
 
     public override void Tick()
@@ -31,29 +26,30 @@ public class LocalPlayer : Entity
         if (isCrouch)
             playerHeight = 1.4f;
 
-
-        Camera.Position = position + new Vector3(0, playerHeight, 0);
-
-        if (Vector3.Distance(lastPacketPosition, position) > 0.3f)
+        Camera.Position = Position + new Vector3(0, playerHeight, 0);
+        if (Vector3.Distance(lastPacketPosition, Position) > 0.3f)
         {
             PlayerMovePacket packet = new PlayerMovePacket();
-            packet.X = position.X;
-            packet.Y = position.Y;
-            packet.Z = position.Z;
-            lastPacketPosition = position;
+            packet.X = Position.X;
+            packet.Y = Position.Y;
+            packet.Z = Position.Z;
+            lastPacketPosition = Position;
             Network.SendPacket(packet.Write());
+
+            Console.WriteLine("Send move!");
         }
     }
 
 
-    private bool enableAO = false;
+    private int renderDebugMode = 0;
     private void Interact()
     {
         if (Keyboard.Current.IsPressedThisFrame(Keys.F9))
         {
-            enableAO = !enableAO;
-            int status = enableAO ? 1 : 0;
-            RenderData.DefaultChunkShader.SetInt("u_DisableAO", status);
+            renderDebugMode++;
+            if (renderDebugMode == 7)
+                renderDebugMode = 0;
+            RenderData.DefaultChunkShader.SetInt("u_Debug", renderDebugMode);
         }
 
         if (Mouse.Current.LeftPressedThisFrame())
@@ -97,14 +93,6 @@ public class LocalPlayer : Entity
 
     private void Movement()
     {
-        // Respawn thing #TODO move to server
-        if (position.Y < -100)
-        {
-            position = new Vector3(0, 100, 0);
-            velocity.Y = 0;
-        }
-
-
         if (Keyboard.Current.IsPressedThisFrame(Keys.Escape))
         {
             GameCanvas.Unlock();
@@ -138,19 +126,19 @@ public class LocalPlayer : Entity
 
         if (Keyboard.Current.IsPressed(Keys.Space) && IsGrounded)
         {
-            velocity.Y += 8;
+            SetVelocityY(8);
         }
 
         Vector3 tDirection = Camera.Translate(direction);
 
-        float y = velocity.Y;
+        float y = Velocity.Y;
 
         float speed = 4;
         if (isCrouch)
             speed = 2;
 
-        velocity = tDirection * speed;
-        velocity.Y = y;
+        SetVelocity(tDirection * speed);
+        SetVelocityY(y);
     }
 
     private Vector3 lastPacketPosition = Vector3.Zero;

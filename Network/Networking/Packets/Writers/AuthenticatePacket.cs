@@ -3,10 +3,12 @@
 public class AuthenticatePacket : PacketWriter
 {
     public int EntityId;
+    public int ServerVersion;
 
     public override void Read(Packet packet)
     {
         EntityId = packet.ReadInt();
+        ServerVersion = packet.ReadInt();
     }
 
     public override Packet Write()
@@ -14,6 +16,7 @@ public class AuthenticatePacket : PacketWriter
         Packet packet = new Packet(WriterType());
 
         packet.WriteInt(EntityId);
+        packet.WriteInt(ServerVersion);
 
         return packet;
     }

@@ -14,18 +14,44 @@ public class Multiverse
     internal static void Start()
     {
         world.OnBlockPlace += World_OnBlockPlace;
+        world.OnEntitySpawn += (args) =>
+        {
+            if (args.Entity is PlayerEntity player)
+            {
+                OnPlayerJoin?.Invoke(player);
+            }
+        };
     }
+
+    public static event Action<PlayerEntity>? OnPlayerJoin;
 
     private static void World_OnBlockPlace((Block block, int x, int y, int z) obj)
     {
-        SetBlockPacket packet = new SetBlockPacket();
-        packet.X = obj.x;
-        packet.Y = obj.y;
-        packet.Z = obj.z;
-        packet.Type = obj.block.RegistryId;
+        SetBlockPacket blockPacket = new SetBlockPacket
+        {
+            X = obj.x,
+            Y = obj.y,
+            Z = obj.z,
+            Type = obj.block.RegistryId
+        };
 
-        Program.server.BroadcastPacket(packet.Write());
+        Packet packet = blockPacket.Write();
+
+        int chunkX = (int)Math.Floor(obj.x / 16.0);
+        int chunkY = (int)Math.Floor(obj.y / 16.0);
+        int chunkZ = (int)Math.Floor(obj.z / 16.0);
+
+        foreach (PlayerEntity player in world.GetEntities()
+            .Where(o => o is PlayerEntity)
+            .Cast<PlayerEntity>())
+        {
+            if (player.IsChunkLoaded(chunkX, chunkY, chunkZ))
+            {
+                player.Connection.SendPacket(packet);
+            }
+        }
     }
+
 
     internal static void TickWorlds()
     {
@@ -46,9 +72,9 @@ public class Multiverse
 
                 MoveEntityPacket moveEntityPacket = new MoveEntityPacket();
                 moveEntityPacket.Id = serverEntity.Id;
-                moveEntityPacket.X = serverEntity.position.X;
-                moveEntityPacket.Y = serverEntity.position.Y;
-                moveEntityPacket.Z = serverEntity.position.Z;
+                moveEntityPacket.X = serverEntity.Position.X;
+                moveEntityPacket.Y = serverEntity.Position.Y;
+                moveEntityPacket.Z = serverEntity.Position.Z;
 
                 connection.SendPacket(moveEntityPacket.Write());
             }
