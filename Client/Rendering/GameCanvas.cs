@@ -2,11 +2,13 @@
 
 using Client.Input;
 using Client.Networking;
+using Client.Sound;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using Shared.Mathf;
 using Shared.Worlds;
+
 using System.Diagnostics;
 using Matrix4 = OpenTK.Mathematics.Matrix4;
 
@@ -32,6 +34,8 @@ public class GameCanvas : GameWindow
     /// </summary>
     protected override void OnLoad()
     {
+
+        SoundPlayer.Start();
 
         // ** Setup a bunch of stuff **
         // Enable depth drawing
@@ -365,6 +369,13 @@ public class GameCanvas : GameWindow
     {
         if ((float)args.Time < 0.1f)
             Time.DeltaTime = (float)args.Time;
+
+        SoundPlayer.Update();
+
+        if (Keyboard.Current.IsPressedThisFrame(Keys: OpenTK.Windowing.GraphicsLibraryFramework.Keys.F3))
+        {
+            SoundPlayer.PlayAudioAtPosition("test", Camera.Position, 1, 0, 10, 1);
+        }
 
         foreach (ChunkRenderer chunkRenderer in chunkRenderers)
         {

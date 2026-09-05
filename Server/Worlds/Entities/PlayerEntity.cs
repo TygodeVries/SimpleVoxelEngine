@@ -309,4 +309,48 @@ public class PlayerEntity : ServerEntity
     {
         return EntityType.Player;
     }
+
+    public event Action<PlaySoundArgs>? OnSoundPlay;
+
+    public void PlaySound(string sound)
+    {
+        OnSoundPlay?.Invoke(new PlaySoundArgs()
+        {
+            Sound = sound,
+            IsGlobal = true
+        });
+
+        PlaySoundPacket playSoundPacket = new PlaySoundPacket();
+        playSoundPacket.Sound = sound;
+        playSoundPacket.IsGlobal = true;
+
+        Connection.SendPacket(playSoundPacket.Write());
+    }
+
+    public void PlaySound(string sound, Vector3 position, float volume = 1, float referenceDistance = 1.0f, float maxDistance = 50.0f, float rolloffFactor = 1.0f)
+    {
+        OnSoundPlay?.Invoke(new PlaySoundArgs()
+        {
+            Sound = sound,
+            IsGlobal = false,
+            Volume = volume,
+            Position = position,
+            MaxDistance = maxDistance,
+            ReferenceDistance = referenceDistance,
+            RolloffFactor = rolloffFactor
+        });
+
+        PlaySoundPacket playSoundPacket = new PlaySoundPacket()
+        {
+            Sound = sound,
+            IsGlobal = false,
+            Volume = volume,
+            Position = position,
+            MaxDistance = maxDistance,
+            ReferenceDistance = referenceDistance,
+            RolloffFactor = rolloffFactor
+        };
+
+        Connection.SendPacket(playSoundPacket.Write());
+    }
 }

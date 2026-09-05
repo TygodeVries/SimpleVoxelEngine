@@ -88,6 +88,11 @@ public class World
         return entities;
     }
 
+    public List<T> GetEntitiesOfType<T>()
+    {
+        return entities.OfType<T>().ToList();
+    }
+
     public Entity? GetEntityWithId(int id)
     {
         return entities.FirstOrDefault((e) =>
@@ -128,6 +133,32 @@ public class World
 
         futureEntities.Clear();
     }
+
+    public event Action<PlaySoundArgs>? OnSoundPlay;
+
+    public void PlaySound(string sound)
+    {
+        OnSoundPlay?.Invoke(new PlaySoundArgs()
+        {
+            Sound = sound,
+            IsGlobal = true
+        });
+    }
+
+    public void PlaySound(string sound, Vector3 position, float volume = 1, float referenceDistance = 1.0f, float maxDistance = 50.0f, float rolloffFactor = 1.0f)
+    {
+        OnSoundPlay?.Invoke(new PlaySoundArgs()
+        {
+            Sound = sound,
+            IsGlobal = false,
+            Volume = volume,
+            Position = position,
+            MaxDistance = maxDistance,
+            ReferenceDistance = referenceDistance,
+            RolloffFactor = rolloffFactor
+        });
+    }
+
 
     public RaycastHit? Raycast(Vector3 position, Vector3 direction, float maxDistance = 5)
     {
@@ -467,4 +498,15 @@ public class OnEntitySpawnArgs
     {
         this.Entity = entity;
     }
+}
+
+public class PlaySoundArgs
+{
+    public bool IsGlobal;
+    public float Volume;
+    public float ReferenceDistance;
+    public float MaxDistance;
+    public float RolloffFactor;
+    public Vector3 Position;
+    public string Sound = "";
 }

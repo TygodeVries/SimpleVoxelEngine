@@ -35,8 +35,6 @@ public class LocalPlayer : Entity
             packet.Z = Position.Z;
             lastPacketPosition = Position;
             Network.SendPacket(packet.Write());
-
-            Console.WriteLine("Send move!");
         }
     }
 

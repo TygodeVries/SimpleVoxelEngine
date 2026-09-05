@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="OpenTK" Version="5.0.0-pre.16" />
+    <PackageReference Include="OpenTK.Audio" Version="5.0.0-pre.16" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
   </ItemGroup>
 

@@ -21,6 +21,21 @@ public class Multiverse
                 OnPlayerJoin?.Invoke(player);
             }
         };
+
+        world.OnSoundPlay += (args) =>
+        {
+            foreach (PlayerEntity player in world.GetEntitiesOfType<PlayerEntity>())
+            {
+                if (args.IsGlobal)
+                {
+                    player.PlaySound(args.Sound);
+                }
+                else
+                {
+                    player.PlaySound(args.Sound, args.Position, args.Volume, args.ReferenceDistance, args.MaxDistance, args.RolloffFactor);
+                }
+            }
+        };
     }
 
     public static event Action<PlayerEntity>? OnPlayerJoin;

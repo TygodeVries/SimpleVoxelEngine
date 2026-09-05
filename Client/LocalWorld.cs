@@ -1,6 +1,7 @@
 ﻿using Client.Entities;
 using Client.Networking;
 using Client.Rendering;
+using Client.Sound;
 using Shared.Networking;
 using Shared.Worlds;
 
@@ -235,6 +236,21 @@ public class LocalWorld
             PlayerMovePacket playerMove = new PlayerMovePacket();
 
             currentPlayerEntity.Teleport(playerMove.X, playerMove.Y, playerMove.Z);
+        }
+
+        if (packet.GetPacketType() == PacketType.PlaySound)
+        {
+            PlaySoundPacket playSoundPacket = new PlaySoundPacket();
+            playSoundPacket.Read(packet);
+
+            if (playSoundPacket.IsGlobal)
+            {
+                SoundPlayer.PlayAudioGlobal(playSoundPacket.Sound);
+            }
+            else
+            {
+                SoundPlayer.PlayAudioAtPosition(playSoundPacket.Sound, playSoundPacket.Position, playSoundPacket.Volume, playSoundPacket.ReferenceDistance, playSoundPacket.MaxDistance, playSoundPacket.RolloffFactor);
+            }
         }
     }
 }
