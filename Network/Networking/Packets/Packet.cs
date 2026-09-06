@@ -5,6 +5,11 @@ namespace Shared.Networking;
 
 public class Packet
 {
+    public void ResetRead()
+    {
+        packetStream.Position = 0;
+    }
+
     private MemoryStream packetStream;
     private BinaryReader reader;
     private BinaryWriter writer;

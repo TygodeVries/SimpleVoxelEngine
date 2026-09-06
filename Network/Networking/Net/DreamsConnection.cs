@@ -14,9 +14,14 @@ public class DreamsConnection : Connection
         return !isDisconnected;
     }
 
-    public override void ReadPackets(int maxPacketsRead)
+    public async override Task ReadPacketsLoop()
     {
         // No need to read packets
+    }
+
+    public override void HandlePackets()
+    {
+        // No need to handle packets
     }
 
     public override void SendPacket(Packet packet)

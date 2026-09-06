@@ -18,7 +18,7 @@ public enum PacketType : byte
     DreamsRemoveUser = 13,
     DreamsServerList = 14,
     UnloadChunk = 15,
-    Texturepack = 16,
+    ResourcePack = 16,
     RegistryData = 17,
     SelectSlot = 18,
     PlayerInteract = 19,

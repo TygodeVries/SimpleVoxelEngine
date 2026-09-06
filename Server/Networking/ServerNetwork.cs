@@ -3,6 +3,7 @@ using Server.Worlds;
 using Shared;
 using Shared.Networking;
 using Shared.Worlds;
+using Spectre.Console;
 using System.Net.Sockets;
 
 namespace Server.Networking;
@@ -30,7 +31,7 @@ public class ServerNetwork
 
             // Tell them we are a server
             tcpConnection.SendPacket(new DreamsServerInfoPacket().Write());
-
+            _ = tcpConnection.ReadPacketsLoop();
             SetupDreams(tcpConnection);
             connections.Add(tcpConnection);
 
@@ -53,6 +54,11 @@ public class ServerNetwork
 
     private void DreamsConnection_OnPacket(Packet packet)
     {
+        if (packet.GetPacketType() == PacketType.DreamsServerInfo)
+        {
+            AnsiConsole.MarkupLine($"[yellow](!)[/][white] Dreams Server Address: {packet.ReadString()}[/]");
+        }
+
         if (packet.GetPacketType() == PacketType.DreamsAddUser)
         {
             DreamsAddUserPacket dreamsAddUserPacket = new DreamsAddUserPacket();
@@ -61,8 +67,7 @@ public class ServerNetwork
             DreamsConnection dreamsConnection = new DreamsConnection(dreamsAddUserPacket.id);
             futureConnections.Add(dreamsConnection);
             dreamsConnections.Add(dreamsConnection.id, dreamsConnection);
-
-            Console.WriteLine("Added dreams user with RegistryId: " + dreamsConnection.id);
+            AnsiConsole.MarkupLine("[green](+) [/][white]A user connected via Dreams.[/]");
             // When a connection wants to send a packet, we need to pass it to dreams instead.
             dreamsConnection.OnSendPacket += (Packet packet) =>
             {
@@ -72,6 +77,7 @@ public class ServerNetwork
 
                 dreamsServerConnection?.SendPacket(dreamsPacketDataPacket.Write());
             };
+
 
             CatchupConnection(dreamsConnection);
         }
@@ -89,6 +95,8 @@ public class ServerNetwork
             DreamsRemoveUserPacket removePacket = new DreamsRemoveUserPacket();
             removePacket.Read(packet);
 
+
+            AnsiConsole.MarkupLine("[red](-) [/][white]A user disconnected via Dreams.[/]");
             DreamsConnection connection = dreamsConnections[removePacket.id];
             dreamsConnections.Remove(removePacket.id);
 
@@ -114,21 +122,39 @@ public class ServerNetwork
 
     public void CatchupConnection(Connection connection)
     {
+        connection.ReadPacketsLoop();
+
         // First send the textures
-        TexturepackPacket texturepackPacket = new TexturepackPacket();
-        texturepackPacket.textureType = TextureType.BLOCKS;
+        ResourcePackPacket texturepackPacket = new ResourcePackPacket();
+        texturepackPacket.resourceType = ResourceType.BLOCKS_TEXTURES;
         texturepackPacket.names = PluginLoader.blockTextureBuilder.GetNames();
         texturepackPacket.textureResolution = PluginLoader.blockTextureBuilder.TextureResolution;
-        texturepackPacket.textureData = PluginLoader.blockTextureBuilder.GetTexture();
+        texturepackPacket.resourceData = PluginLoader.blockTextureBuilder.GetTexture();
         connection.SendPacket(texturepackPacket.Write());
 
         // The item textures
-        texturepackPacket = new TexturepackPacket();
-        texturepackPacket.textureType = TextureType.ITEMS;
+        texturepackPacket = new ResourcePackPacket();
+        texturepackPacket.resourceType = ResourceType.ITEMS_TEXTURES;
         texturepackPacket.names = PluginLoader.itemTextureBuilder.GetNames();
         texturepackPacket.textureResolution = PluginLoader.itemTextureBuilder.TextureResolution;
-        texturepackPacket.textureData = PluginLoader.itemTextureBuilder.GetTexture();
+        texturepackPacket.resourceData = PluginLoader.itemTextureBuilder.GetTexture();
         connection.SendPacket(texturepackPacket.Write());
+
+        foreach ((string, byte[]) clip in PluginLoader.audioBuilder)
+        {
+            ResourcePackPacket resourcePackPacket = new ResourcePackPacket();
+            resourcePackPacket.names = new List<string>()
+            {
+                clip.Item1
+            };
+            resourcePackPacket.resourceType = ResourceType.SOUND;
+            resourcePackPacket.resourceData = clip.Item2;
+            Console.WriteLine("Sending packet for audio data: " + clip.Item1);
+            connection.SendPacket(resourcePackPacket.Write());
+            Console.WriteLine("Send! : " + clip.Item1);
+        }
+
+
 
         // THEN the registry second.
         RegistryDataPacket registryPacket = new RegistryDataPacket();
@@ -178,7 +204,7 @@ public class ServerNetwork
 
         foreach (Connection connection in connections)
         {
-            connection.ReadPackets(5000);
+            connection.HandlePackets();
         }
 
         foreach (Connection connection in futureConnections)

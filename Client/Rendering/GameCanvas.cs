@@ -19,7 +19,7 @@ public class GameCanvas : GameWindow
     {
         canvas = this;
     }
-    private static GameCanvas canvas;
+    internal static GameCanvas canvas;
     public static void ForceClose()
     {
         canvas.Close();
@@ -62,8 +62,6 @@ public class GameCanvas : GameWindow
         // Start the stopwatch for the FPS counter
         fpsCounterStopwatch.Start();
 
-        LocalWorld.World.OnAddChunk += World_OnAddChunk;
-        LocalWorld.World.OnRemoveChunk += World_OnRemoveChunk;
         GameCanvas.Width = width;
         GameCanvas.Height = height;
 
@@ -114,7 +112,7 @@ public class GameCanvas : GameWindow
         };
         AddRenderer(lineRenderer);
     }
-    private void World_OnRemoveChunk(Shared.Worlds.Chunk obj)
+    internal void World_OnRemoveChunk(Shared.Worlds.Chunk obj)
     {
         for (int i = 0; i < chunkRenderers.Count; i++)
         {
@@ -135,7 +133,7 @@ public class GameCanvas : GameWindow
             Environment.SetEnvironmentVariable("DRI_PRIME", "1");
         }
     }
-    private void World_OnAddChunk(Shared.Worlds.Chunk obj)
+    internal void World_OnAddChunk(Shared.Worlds.Chunk obj)
     {
         ChunkRenderer chunkRenderer = new ChunkRenderer(obj);
         GameCanvas.AddRenderer(chunkRenderer);
@@ -249,6 +247,10 @@ public class GameCanvas : GameWindow
             if (!renderer.visible)
                 continue;
 
+            if (hideUi && renderer.GetType() == typeof(UIRenderer))
+            {
+                continue;
+            }
 
             // Render that thing.
 
@@ -364,7 +366,7 @@ public class GameCanvas : GameWindow
     {
         Keyboard.Current.SetKeysState(e.Key, false);
     }
-
+    private bool hideUi = false;
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
         if ((float)args.Time < 0.1f)
@@ -372,9 +374,9 @@ public class GameCanvas : GameWindow
 
         SoundPlayer.Update();
 
-        if (Keyboard.Current.IsPressedThisFrame(Keys: OpenTK.Windowing.GraphicsLibraryFramework.Keys.F3))
+        if (Keyboard.Current.IsPressedThisFrame(Keys: OpenTK.Windowing.GraphicsLibraryFramework.Keys.F1))
         {
-            SoundPlayer.PlayAudioAtPosition("test", Camera.Position, 1, 0, 10, 1);
+            hideUi = !hideUi;
         }
 
         foreach (ChunkRenderer chunkRenderer in chunkRenderers)

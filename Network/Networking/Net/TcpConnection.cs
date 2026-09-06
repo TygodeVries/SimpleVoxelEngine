@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Collections.Concurrent;
+using System.Net.Sockets;
 namespace Shared.Networking;
 
 public class TcpConnection : Connection
@@ -9,55 +10,81 @@ public class TcpConnection : Connection
         return client.Connected;
     }
 
+    private const int MaxPacketSize = int.MaxValue;
+    private ConcurrentQueue<byte[]> pendingPackets = new ConcurrentQueue<byte[]>();
+    private readonly CancellationTokenSource readCancellation = new();
 
-    private int expectedSize = -1;
-
-    public override void ReadPackets(int maxPacketsRead)
+    public void Stop()
     {
-        if (!IsConnected())
+        if (!readCancellation.IsCancellationRequested)
         {
-            return;
+            readCancellation.Cancel();
         }
+    }
 
-        if (maxPacketsRead == 0)
-        {
-            Console.WriteLine("Max packets read hit.");
-            return;
-        }
-
+    public async override Task ReadPacketsLoop()
+    {
         try
         {
-            if (expectedSize == -1)
+            NetworkStream stream = client.GetStream();
+
+            while (IsConnected())
             {
-                if (client.Available > 4)
+                byte[] sizeHeader = new byte[4];
+
+                await stream.ReadExactlyAsync(
+                    sizeHeader,
+                    0,
+                    4,
+                    readCancellation.Token
+                );
+
+                int size = BitConverter.ToInt32(sizeHeader, 0);
+
+                if (size <= 0 || size > MaxPacketSize)
                 {
-                    byte[] sizeHeader = new byte[4];
-
-                    client.GetStream().ReadExactly(sizeHeader, 0, 4);
-
-                    expectedSize = BitConverter.ToInt32(sizeHeader);
+                    throw new InvalidDataException(
+                        $"Invalid packet size: {size}"
+                    );
                 }
+
+                byte[] packet = new byte[size];
+
+                await stream.ReadExactlyAsync(
+                    packet,
+                    0,
+                    size,
+                    readCancellation.Token
+                );
+
+                pendingPackets.Enqueue(packet);
             }
-
-            if (expectedSize != -1 && client.Available >= expectedSize)
-            {
-                byte[] packet = new byte[expectedSize];
-
-                client.GetStream().ReadExactly(packet, 0, expectedSize);
-                expectedSize = -1;
-
-                HandlePacket(packet);
-
-                // Read another if possible.
-                ReadPackets(maxPacketsRead - 1);
-            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when Stop() is called.
         }
         catch (Exception e)
         {
-            Console.WriteLine("Error reading packets from client: " + e);
+            Console.WriteLine(
+                $"Error reading packets from client: {e}"
+            );
+
             Disconnect();
         }
     }
+
+    public override void HandlePackets()
+    {
+        while (pendingPackets.TryDequeue(out byte[]? packet))
+        {
+            if (packet == null)
+                continue;
+
+            HandlePacket(packet);
+        }
+    }
+
     private void HandlePacket(byte[] packetContent)
     {
         PacketType type = (PacketType)packetContent[0];
@@ -72,6 +99,10 @@ public class TcpConnection : Connection
 
     public override void SendPacket(Packet packet)
     {
+
+        if (isDisconnected)
+            return;
+
         try
         {
             byte[] bytes = packet.GetBytes();
@@ -94,5 +125,6 @@ public class TcpConnection : Connection
     public TcpConnection(TcpClient client)
     {
         this.client = client;
+        this.OnDisconnect += Stop;
     }
 }

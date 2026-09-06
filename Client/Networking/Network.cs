@@ -1,6 +1,6 @@
-﻿using Client.Rendering;
-using Shared;
+﻿using Shared;
 using Shared.Networking;
+using Shared.Worlds;
 using System.Net.Sockets;
 
 namespace Client.Networking
@@ -10,6 +10,11 @@ namespace Client.Networking
         private static Connection? connection;
         public static void Connect(bool isTcpServer, string address)
         {
+            if (connection != null)
+                connection.Disconnect();
+            Registry.Clear();
+            LocalWorld.ResetWorld();
+
             if (isTcpServer)
             {
                 string[] args = address.Split(':');
@@ -43,19 +48,19 @@ namespace Client.Networking
                 };
             }
 
-            connection.OnDisconnect += Connection_OnDisconnect;
+            connection!.ReadPacketsLoop();
+            connection!.OnDisconnect += Connection_OnDisconnect;
         }
 
         private static void Connection_OnDisconnect()
         {
             Console.WriteLine("The connection to the server was lost!");
-            Program.HasCrashed = true;
-            GameCanvas.ForceClose();
+            // #TODO -> Go to backup server
         }
 
         public static void Tick()
         {
-            connection?.ReadPackets(5000);
+            connection?.HandlePackets();
         }
 
         public static void SendPacket(Packet packet)

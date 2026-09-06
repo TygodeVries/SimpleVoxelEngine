@@ -1,10 +1,10 @@
 ﻿namespace Shared.Networking;
 
-public class TexturepackPacket : PacketWriter
+public class ResourcePackPacket : PacketWriter
 {
     public List<string>? names;
-    public TextureType textureType;
-    public byte[] textureData;
+    public ResourceType resourceType;
+    public byte[] resourceData;
     public int textureResolution;
     public override Packet Write()
     {
@@ -13,7 +13,7 @@ public class TexturepackPacket : PacketWriter
 
         Packet packet = new Packet(WriterType());
 
-        packet.WriteInt((int)textureType);
+        packet.WriteInt((int)resourceType);
         packet.WriteInt(textureResolution);
 
         packet.WriteInt(names.Count);
@@ -22,21 +22,21 @@ public class TexturepackPacket : PacketWriter
             packet.WriteString(name);
         }
 
-        packet.WriteInt(textureData.Length);
-        packet.WriteByteArray(textureData);
+        packet.WriteInt(resourceData.Length);
+        packet.WriteByteArray(resourceData);
 
         return packet;
     }
 
     public override PacketType WriterType()
     {
-        return PacketType.Texturepack;
+        return PacketType.ResourcePack;
     }
 
     public override void Read(Packet packet)
     {
         names = new List<string>();
-        textureType = (TextureType)packet.ReadInt();
+        resourceType = (ResourceType)packet.ReadInt();
         textureResolution = packet.ReadInt();
 
         int nameCount = packet.ReadInt();
@@ -46,12 +46,13 @@ public class TexturepackPacket : PacketWriter
         }
 
         int l = packet.ReadInt();
-        textureData = packet.ReadByteArray(l);
+        resourceData = packet.ReadByteArray(l);
     }
 }
 
-public enum TextureType
+public enum ResourceType
 {
-    BLOCKS,
-    ITEMS
+    BLOCKS_TEXTURES,
+    ITEMS_TEXTURES,
+    SOUND
 }

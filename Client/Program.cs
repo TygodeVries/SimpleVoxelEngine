@@ -1,5 +1,4 @@
-﻿using Client;
-using Client.Networking;
+﻿using Client.Networking;
 using Client.Rendering;
 using OpenTK.Windowing.Desktop;
 using System.Diagnostics;
@@ -121,14 +120,16 @@ public class Program
         {
             address = "127.0.0.1:5050";
         }
-        Network.Connect(isDirect, address);
-        LocalWorld.ListenForPackets();
+
 
         nativeWindowSettings.Title = "A yet to be named game.";
         nativeWindowSettings.ClientSize = new OpenTK.Mathematics.Vector2i(1920, 1080);
 
         // Create the window object
         GameCanvas gameCanvas = new GameCanvas(gameWindowSettings, nativeWindowSettings);
+
+        // Connect to the network
+        Network.Connect(isDirect, address);
 
         // Start the program (blocks this thread until the window closes.)
         gameCanvas.Run();

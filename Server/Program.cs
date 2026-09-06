@@ -48,11 +48,11 @@ public class Program
 
         if (dreamsConnected)
         {
-            AnsiConsole.Markup("[lime]Connected with Dreams.[/]");
+            AnsiConsole.MarkupLine("[lime]Connected with Dreams.[/]");
         }
         else
         {
-            AnsiConsole.Markup("[yellow]Could not connect with Dreams.[/]");
+            AnsiConsole.MarkupLine("[yellow]Could not connect with Dreams.[/]");
         }
 
         while (true)

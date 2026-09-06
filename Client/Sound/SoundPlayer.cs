@@ -11,34 +11,67 @@ public class SoundPlayer
 
     private static readonly List<int> activeSources = new();
 
+    public static void Reset()
+    {
+        foreach (int sourceId in activeSources)
+        {
+            try
+            {
+                AL.SourceStop(sourceId);
+                AL.DeleteSource(sourceId);
+            }
+            catch
+            {
+
+            }
+        }
+
+        activeSources.Clear();
+
+        foreach (int bufferId in audioClips.Values)
+        {
+            try
+            {
+                AL.DeleteBuffer(bufferId);
+            }
+            catch
+            {
+
+            }
+        }
+
+        audioClips.Clear();
+    }
+
+    public static void AddAudioResource(List<string>? names, byte[] data)
+    {
+        if (names == null)
+            throw new NullReferenceException("Audio Name is null!");
+
+        SoundPlayer.LoadAudio(names[0], data);
+    }
+
+
     public static void Start()
     {
         var device = ALC.OpenDevice(null);
         var contex = ALC.CreateContext(device, (int[])null);
         ALC.MakeContextCurrent(contex);
 
-        SoundPlayer.LoadAudio("test.wav");
-
         AL.DistanceModel(DistanceModel.LinearDistanceClamped);
     }
 
-    public static void LoadAudio(string path)
+    public static void LoadAudio(string name, byte[] data)
     {
-        string shortName = Path.GetFileNameWithoutExtension(path);
-        string fullPath = Path.Combine("sounds", path);
-
-        if (!File.Exists(fullPath))
-        {
-            throw new FileNotFoundException($"Audio file not found at: {fullPath}");
-        }
-
         int bufferId = AL.GenBuffer();
 
-        byte[] rawPcmData = LoadWavData(fullPath, out Format format, out int sampleRate);
+        byte[] rawPcmData = LoadWavData(data, out Format format, out int sampleRate);
 
         AL.BufferData(bufferId, format, rawPcmData.AsSpan(), rawPcmData.Length, sampleRate);
 
-        audioClips[shortName] = bufferId;
+        audioClips[name] = bufferId;
+
+        Console.WriteLine($"Loaded audio clip {name}...");
     }
 
     public static void PlayAudioGlobal(string name)
@@ -131,89 +164,249 @@ public class SoundPlayer
         AL.Listenerfv(ListenerPNameFV.Orientation, listenerOrientation);
     }
 
-    private static byte[] LoadWavData(string filename, out Format format, out int sampleRate)
-    {
-        using var stream = File.OpenRead(filename);
-        using var reader = new BinaryReader(stream);
 
-        if (new string(reader.ReadChars(4)) != "RIFF")
+    private static byte[] LoadWavData(byte[] data, out Format format, out int sampleRate)
+    {
+        using MemoryStream stream = new(data);
+        using BinaryReader reader = new(stream);
+
+        string riff = new(reader.ReadChars(4));
+
+        if (riff != "RIFF")
             throw new NotSupportedException("Invalid RIFF descriptor.");
 
-        reader.ReadInt32();
+        int riffSize = reader.ReadInt32();
 
-        if (new string(reader.ReadChars(4)) != "WAVE")
+        string wave = new(reader.ReadChars(4));
+
+        if (wave != "WAVE")
             throw new NotSupportedException("Invalid WAVE audio format.");
 
-        if (new string(reader.ReadChars(4)) != "fmt ")
-            throw new NotSupportedException("Invalid layout section header.");
+        int audioFormat = 0;
+        int numChannels = 0;
+        int bitsPerSample = 0;
+        sampleRate = 0;
 
-        int subChunk1Size = reader.ReadInt32();
-        int audioFormat = reader.ReadInt16();
-        int numChannels = reader.ReadInt16();
-        sampleRate = reader.ReadInt32();
-        reader.ReadInt32();
-        reader.ReadInt16();
-        int bitsPerSample = reader.ReadInt16();
+        bool foundFmt = false;
+        bool foundData = false;
 
-        if (subChunk1Size > 16)
-            stream.Seek(subChunk1Size - 16, SeekOrigin.Current);
+        byte[] rawAudioBytes = Array.Empty<byte>();
 
-        string chunkHeader = new string(reader.ReadChars(4));
-        while (chunkHeader != "data")
+        while (stream.Position + 8 <= stream.Length)
         {
-            int remainingBytes = reader.ReadInt32();
-            stream.Seek(remainingBytes, SeekOrigin.Current);
-            chunkHeader = new string(reader.ReadChars(4));
+            long chunkPosition = stream.Position;
+
+            string chunkId = new(reader.ReadChars(4));
+            int chunkSize = reader.ReadInt32();
+
+            Console.WriteLine(
+                $"WAV chunk: '{chunkId}' @ {chunkPosition}, size={chunkSize}");
+
+            if (chunkId == "data")
+            {
+                if (chunkSize == -1)
+                    chunkSize = checked((int)(stream.Length - stream.Position));
+
+                if (chunkSize < 0)
+                {
+                    throw new InvalidDataException(
+                        $"Invalid WAV data chunk size: {chunkSize}.");
+                }
+
+                if (chunkSize > stream.Length - stream.Position)
+                {
+                    throw new InvalidDataException(
+                        $"WAV data chunk extends past end of WAV. " +
+                        $"Size={chunkSize}, " +
+                        $"Remaining={stream.Length - stream.Position}, " +
+                        $"Position={stream.Position}.");
+                }
+
+                rawAudioBytes = reader.ReadBytes(chunkSize);
+
+                if (rawAudioBytes.Length != chunkSize)
+                {
+                    throw new InvalidDataException(
+                        $"Could not read complete WAV data chunk. " +
+                        $"Expected={chunkSize}, " +
+                        $"Read={rawAudioBytes.Length}.");
+                }
+
+                foundData = true;
+                break;
+            }
+
+            if (chunkId == "fmt ")
+            {
+                if (chunkSize == -1)
+                {
+                    throw new InvalidDataException(
+                        "The fmt chunk cannot have an unknown size.");
+                }
+
+                if (chunkSize < 16)
+                {
+                    throw new InvalidDataException(
+                        $"Invalid fmt chunk size: {chunkSize}.");
+                }
+
+                if (chunkSize > stream.Length - stream.Position)
+                {
+                    throw new InvalidDataException(
+                        $"fmt chunk extends past end of WAV. " +
+                        $"Size={chunkSize}, " +
+                        $"Remaining={stream.Length - stream.Position}.");
+                }
+
+                long chunkEnd = stream.Position + chunkSize;
+
+                audioFormat = reader.ReadInt16();
+                numChannels = reader.ReadInt16();
+                sampleRate = reader.ReadInt32();
+
+                reader.ReadInt32();
+                reader.ReadInt16();
+                bitsPerSample = reader.ReadInt16();
+
+                stream.Position = chunkEnd;
+
+                foundFmt = true;
+            }
+            else
+            {
+                if (chunkSize == -1)
+                {
+                    throw new InvalidDataException(
+                        $"Unknown-size non-data chunk '{chunkId}'.");
+                }
+
+                if (chunkSize > stream.Length - stream.Position)
+                {
+                    throw new InvalidDataException(
+                        $"WAV chunk '{chunkId}' extends past end of WAV. " +
+                        $"Size={chunkSize}, " +
+                        $"Remaining={stream.Length - stream.Position}, " +
+                        $"Position={stream.Position}.");
+                }
+
+                stream.Seek(chunkSize, SeekOrigin.Current);
+            }
+
+            if ((chunkSize & 1) != 0)
+            {
+                if (stream.Position >= stream.Length)
+                    break;
+
+                stream.Seek(1, SeekOrigin.Current);
+            }
         }
 
-        int dataSize = reader.ReadInt32();
-        byte[] rawAudioBytes = reader.ReadBytes(dataSize);
+        if (!foundFmt)
+            throw new InvalidDataException("WAV fmt chunk not found.");
 
-        // Force the sound to be mono, as if its not, falloff and 3d sound will not work.
+        if (!foundData)
+            throw new InvalidDataException("WAV data chunk not found.");
+
+        if (audioFormat != 1)
+        {
+            throw new NotSupportedException(
+                $"Unsupported WAV audio format: {audioFormat}. " +
+                "Only PCM is supported.");
+        }
+
+        if (numChannels != 1 && numChannels != 2)
+        {
+            throw new NotSupportedException(
+                $"Unsupported channel count: {numChannels}.");
+        }
+
+        if (bitsPerSample != 8 && bitsPerSample != 16)
+        {
+            throw new NotSupportedException(
+                $"Unsupported bit depth: {bitsPerSample}.");
+        }
+
         if (numChannels == 2)
         {
             if (bitsPerSample == 16)
             {
+                if (rawAudioBytes.Length % 4 != 0)
+                {
+                    throw new InvalidDataException(
+                        "Stereo 16-bit WAV data is not aligned to a complete frame.");
+                }
+
                 int totalFrames = rawAudioBytes.Length / 4;
                 byte[] monoBytes = new byte[totalFrames * 2];
 
                 for (int i = 0; i < totalFrames; i++)
                 {
-                    short left = (short)((rawAudioBytes[(i * 4) + 1] << 8) | rawAudioBytes[i * 4]);
-                    short right = (short)((rawAudioBytes[(i * 4) + 3] << 8) | rawAudioBytes[(i * 4) + 2]);
+                    int offset = i * 4;
 
-                    short monoSample = (short)((left + right) / 2);
+                    short left = (short)(
+                        rawAudioBytes[offset] |
+                        (rawAudioBytes[offset + 1] << 8));
+
+                    short right = (short)(
+                        rawAudioBytes[offset + 2] |
+                        (rawAudioBytes[offset + 3] << 8));
+
+                    short monoSample = (short)(
+                        (left + right) / 2);
 
                     monoBytes[i * 2] = (byte)(monoSample & 0xFF);
                     monoBytes[(i * 2) + 1] = (byte)((monoSample >> 8) & 0xFF);
                 }
+
                 rawAudioBytes = monoBytes;
             }
-            else if (bitsPerSample == 8)
+            else
             {
+                if (rawAudioBytes.Length % 2 != 0)
+                {
+                    throw new InvalidDataException(
+                        "Stereo 8-bit WAV data is not aligned to a complete frame.");
+                }
+
                 int totalFrames = rawAudioBytes.Length / 2;
                 byte[] monoBytes = new byte[totalFrames];
 
                 for (int i = 0; i < totalFrames; i++)
                 {
-                    int left = rawAudioBytes[i * 2];
-                    int right = rawAudioBytes[(i * 2) + 1];
+                    int offset = i * 2;
+
+                    int left = rawAudioBytes[offset];
+                    int right = rawAudioBytes[offset + 1];
+
                     monoBytes[i] = (byte)((left + right) / 2);
                 }
+
                 rawAudioBytes = monoBytes;
             }
 
             numChannels = 1;
         }
+
         format = (numChannels, bitsPerSample) switch
         {
             (1, 8) => Format.Mono8,
             (1, 16) => Format.Mono16,
             (2, 8) => Format.Stereo8,
             (2, 16) => Format.Stereo16,
-            _ => throw new NotSupportedException($"Format combination not supported: {numChannels} Channels, {bitsPerSample}-bit.")
+
+            _ => throw new NotSupportedException(
+                $"Format combination not supported: " +
+                $"{numChannels} Channels, {bitsPerSample}-bit.")
         };
 
+        Console.WriteLine(
+            $"Loaded WAV: {sampleRate} Hz, " +
+            $"{numChannels} channel(s), " +
+            $"{bitsPerSample}-bit, " +
+            $"{rawAudioBytes.Length} audio bytes.");
+
         return rawAudioBytes;
+
+
     }
 }

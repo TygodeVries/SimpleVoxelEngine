@@ -65,8 +65,6 @@ public class World
 
     public void SpawnEntity(Entity entity, int forceId = -1)
     {
-        Console.WriteLine($"Spawning entity of type {entity.GetType().Name}");
-
         this.futureEntities.Add(entity);
         entity.SetWorld(this);
 
@@ -104,7 +102,6 @@ public class World
     private int IdCount = 0;
     public void DestroyEntity(Entity entity)
     {
-        Console.WriteLine($"Destroying entity of type {entity.GetType().Name}");
         graveYard.Add(entity);
     }
 
@@ -117,6 +114,9 @@ public class World
 
         foreach (Entity entity in graveYard)
         {
+            if (entity == null)
+                continue;
+
             entity.OnDestroy();
             entities.Remove(entity);
         }
@@ -127,7 +127,6 @@ public class World
         {
             entity.OnSpawn();
             entities.Add(entity);
-            Console.WriteLine("Registered Entity");
             OnEntitySpawn?.Invoke(new OnEntitySpawnArgs(entity));
         }
 

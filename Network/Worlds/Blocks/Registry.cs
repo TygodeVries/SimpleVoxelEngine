@@ -6,6 +6,15 @@ public class Registry
     private static List<Block> blocks = new List<Block>();
     private static List<Item> itemTypes = new List<Item>();
 
+    /// <summary>
+    /// Deletes EVERYTHING currently regisered. Use with causion!
+    /// </summary>
+    public static void Clear()
+    {
+        InRegistryStage = false;
+        blocks = new List<Block>();
+        itemTypes = new List<Item>();
+    }
     public static byte[] SaveAll()
     {
         MemoryStream stream = new MemoryStream();

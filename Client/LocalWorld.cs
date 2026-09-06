@@ -14,7 +14,30 @@ public class LocalWorld
 
     public static void ResetWorld()
     {
+        while (World.GetChunks().Count > 0)
+        {
+            World.RemoveChunk(World.GetChunks().First());
+        }
+
+        while (World.GetEntities().Count > 0)
+        {
+            World.DestroyEntity(World.GetEntities().First());
+            World.Tick();
+        }
+
+
+        SoundPlayer.Reset();
         World = new World();
+        localPlayerId = -1;
+
+        Registry.OnBlockRegister -= Registry_OnBlockRegister;
+        LocalWorld.World.OnAddChunk -= GameCanvas.canvas.World_OnAddChunk;
+        LocalWorld.World.OnRemoveChunk -= GameCanvas.canvas.World_OnRemoveChunk;
+        Network.OnPacket -= OnPacket;
+
+        LocalInventory.Clear();
+
+        Startup();
     }
 
     public static void Regenerate()
@@ -25,11 +48,12 @@ public class LocalWorld
         }
     }
 
-    public static void ListenForPackets()
+    public static void Startup()
     {
-        Network.OnPacket += OnPacket;
-
         Registry.OnBlockRegister += Registry_OnBlockRegister;
+        LocalWorld.World.OnAddChunk += GameCanvas.canvas.World_OnAddChunk;
+        LocalWorld.World.OnRemoveChunk += GameCanvas.canvas.World_OnRemoveChunk;
+        Network.OnPacket += OnPacket;
     }
 
     private static void Registry_OnBlockRegister(Block obj)
@@ -199,18 +223,23 @@ public class LocalWorld
             World.SetBlockAt(block, placeBlockPacket.X, placeBlockPacket.Y, placeBlockPacket.Z);
         }
 
-        if (packet.GetPacketType() == PacketType.Texturepack)
+        if (packet.GetPacketType() == PacketType.ResourcePack)
         {
-            TexturepackPacket texturepackPacket = new TexturepackPacket();
-            texturepackPacket.Read(packet);
-
-            if (texturepackPacket.textureType == TextureType.BLOCKS)
+            ResourcePackPacket resourcepack = new ResourcePackPacket();
+            resourcepack.Read(packet);
+            Console.WriteLine("Resourcepack.");
+            if (resourcepack.resourceType == ResourceType.BLOCKS_TEXTURES)
             {
-                RenderData.SetBlockTexture(texturepackPacket.names, ImageTexture.LoadFromBytes(texturepackPacket.textureData));
+                RenderData.SetBlockTexture(resourcepack.names, ImageTexture.LoadFromBytes(resourcepack.resourceData));
             }
-            else if (texturepackPacket.textureType == TextureType.ITEMS)
+            else if (resourcepack.resourceType == ResourceType.ITEMS_TEXTURES)
             {
-                RenderData.SetItemTexture(texturepackPacket.names, ImageTexture.LoadFromBytes(texturepackPacket.textureData));
+                RenderData.SetItemTexture(resourcepack.names, ImageTexture.LoadFromBytes(resourcepack.resourceData));
+            }
+            else if (resourcepack.resourceType == ResourceType.SOUND)
+            {
+                Console.WriteLine("Got sound resource!");
+                SoundPlayer.AddAudioResource(resourcepack.names, resourcepack.resourceData);
             }
 
         }

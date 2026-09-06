@@ -95,7 +95,7 @@ public class PlayerEntity : ServerEntity
     /// <summary>
     /// The view distance of the player
     /// </summary>
-    private const int ChunkLoadDistance = 8;
+    private const int ChunkLoadDistance = 5;
 
     /// <summary>
     /// The lists of chunks that are loaded

@@ -23,5 +23,10 @@ public class LocalInventory
         return itemStack.Type;
     }
 
+    public static void Clear()
+    {
+        items = new ItemStack[9];
+        OnLocalInventoryChange?.Invoke();
+    }
     public static event Action? OnLocalInventoryChange;
 }

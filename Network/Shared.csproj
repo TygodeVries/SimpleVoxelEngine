@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="NoiseDotNet" Version="1.0.2" />
     <PackageReference Include="OpenTK" Version="5.0.0-pre.16" />
   </ItemGroup>
 

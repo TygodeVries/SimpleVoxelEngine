@@ -3,7 +3,8 @@
 public abstract class Connection
 {
     public abstract bool IsConnected();
-    public abstract void ReadPackets(int maxPacketsRead);
+    public abstract Task ReadPacketsLoop();
+    public abstract void HandlePackets();
     public event Action? OnDisconnect;
     public bool isDisconnected = false;
     public void Disconnect()
@@ -15,6 +16,7 @@ public abstract class Connection
     public event Action<Packet>? OnPacket;
     public void ExecutePacket(Packet packet)
     {
+        packet.ResetRead();
         OnPacket?.Invoke(packet);
     }
 
