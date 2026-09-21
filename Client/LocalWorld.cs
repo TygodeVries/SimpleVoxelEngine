@@ -1,7 +1,7 @@
 ﻿using Client.Entities;
 using Client.Networking;
 using Client.Rendering;
-using Client.Sound;
+using Client.Rendering.UI;
 using Shared.Networking;
 using Shared.Worlds;
 
@@ -25,8 +25,6 @@ public class LocalWorld
             World.Tick();
         }
 
-
-        SoundPlayer.Reset();
         World = new World();
         localPlayerId = -1;
 
@@ -133,6 +131,7 @@ public class LocalWorld
 
             Entity entity = EntityFactory.CreateEntity(spawnEntityPacket.Type);
             World.SpawnEntity(entity, spawnEntityPacket.Id);
+            World.RunSpawn();
         }
 
         if (packet.GetPacketType() == PacketType.MoveEntity)
@@ -143,6 +142,7 @@ public class LocalWorld
             // Don't move ourselfs
             if (moveEntityPacket.Id == localPlayerId)
             {
+                // Console.WriteLine("Want to move ourselfs??");
                 return;
             }
 
@@ -155,9 +155,10 @@ public class LocalWorld
             }
 
             entity.Teleport(moveEntityPacket.X, moveEntityPacket.Y, moveEntityPacket.Z);
-            LocalWorld.World.Tick();
+            LocalWorld.World.RunSpawn();
         }
 
+        /*
         if (packet.GetPacketType() == PacketType.SetVelocity)
         {
             SetVelocityPacket velocityPacket = new SetVelocityPacket();
@@ -172,6 +173,7 @@ public class LocalWorld
 
             currentPlayerEntity.SetVelocity(velocityPacket.X, velocityPacket.Y, velocityPacket.Z);
         }
+        */
 
         if (packet.GetPacketType() == PacketType.DestroyEntity)
         {
@@ -236,10 +238,9 @@ public class LocalWorld
             {
                 RenderData.SetItemTexture(resourcepack.names, ImageTexture.LoadFromBytes(resourcepack.resourceData));
             }
-            else if (resourcepack.resourceType == ResourceType.SOUND)
+            else if (resourcepack.resourceType == ResourceType.MODELS)
             {
-                Console.WriteLine("Got sound resource!");
-                SoundPlayer.AddAudioResource(resourcepack.names, resourcepack.resourceData);
+                RenderData.SetModels(resourcepack.names, resourcepack.resourceData);
             }
 
         }
@@ -267,19 +268,11 @@ public class LocalWorld
             currentPlayerEntity.Teleport(playerMove.X, playerMove.Y, playerMove.Z);
         }
 
-        if (packet.GetPacketType() == PacketType.PlaySound)
+        if (packet.GetPacketType() == PacketType.Toast)
         {
-            PlaySoundPacket playSoundPacket = new PlaySoundPacket();
-            playSoundPacket.Read(packet);
-
-            if (playSoundPacket.IsGlobal)
-            {
-                SoundPlayer.PlayAudioGlobal(playSoundPacket.Sound);
-            }
-            else
-            {
-                SoundPlayer.PlayAudioAtPosition(playSoundPacket.Sound, playSoundPacket.Position, playSoundPacket.Volume, playSoundPacket.ReferenceDistance, playSoundPacket.MaxDistance, playSoundPacket.RolloffFactor);
-            }
+            ToastPacket toastPacket = new ToastPacket();
+            toastPacket.Read(packet);
+            ToastManager.Send(toastPacket.msg, toastPacket.time);
         }
     }
 }

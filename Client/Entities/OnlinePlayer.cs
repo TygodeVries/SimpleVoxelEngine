@@ -1,4 +1,6 @@
 ﻿using Client.Rendering;
+using Shared.Mathf;
+using Shared.Worlds;
 using SimpleVoxelEngine.Entities;
 
 namespace Client.Entities;
@@ -20,5 +22,10 @@ public class OnlinePlayer : VisibleEntity
     public override void Tick()
     {
         ApplyVisuals();
+    }
+
+    public override EntityType GetEntityType()
+    {
+        return DefaultEntities.Player;
     }
 }

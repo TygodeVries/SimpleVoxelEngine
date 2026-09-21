@@ -205,12 +205,12 @@ public class Chunk
             return BitConverter.ToInt16(data, 0);
         }
 
-        // A chunk with only a few blocks, and a map
+        // A chunk with only a few blockTypes, and a map
         if (type == ChunkType.Simple)
         {
 
-            // We first need to know how many different types of blocks we have in this chunk.
-            // There is a max of 256 different blocks in a simple chunk.
+            // We first need to know how many different types of blockTypes we have in this chunk.
+            // There is a max of 256 different blockTypes in a simple chunk.
             short[] blockMap = new short[(data.Length - SIMPLE_CHUNK_DATA_SIZE) / 2];
 
             // First we fill out our block map.
@@ -229,7 +229,7 @@ public class Chunk
             return blockMap[mapIndex];
         }
 
-        // A chunk with more then 256 blocks (rare!)
+        // A chunk with more then 256 blockTypes (rare!)
         if (type == ChunkType.Complex)
         {
             // Calculate the Position of the block in memory
@@ -295,7 +295,7 @@ public class Chunk
             // Create the mappings list
             List<short> blocks = new List<short>();
 
-            // Loop over every block of data, to see if what blocks are used
+            // Loop over every block of data, to see if what blockTypes are used
             for (int i = 0; i < SIMPLE_CHUNK_DATA_SIZE * 2; i += 2)
             {
                 short block = BitConverter.ToInt16(data, i);
@@ -359,12 +359,12 @@ public class Chunk
         Single = 0,
 
         /// <summary>
-        /// The chunk has less then 256 different blocks
+        /// The chunk has less then 256 different blockTypes
         /// </summary>
         Simple = 1,
 
         /// <summary>
-        /// The chunk has more then 256 different blocks
+        /// The chunk has more then 256 different blockTypes
         /// </summary>
         Complex = 2
     }

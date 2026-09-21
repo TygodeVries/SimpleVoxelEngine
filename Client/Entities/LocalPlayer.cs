@@ -4,13 +4,15 @@ using Client.Rendering;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Shared.Mathf;
 using Shared.Networking;
+using Shared.Networking.Packets.Writers;
 using Shared.Worlds;
 namespace Client.Entities;
 
 public class LocalPlayer : Entity
 {
-    public bool isCrouch = false;
+    public const bool IS_FLYMODE = true;
 
+    public bool isCrouch = false;
     public override void Tick()
     {
         ApplyGravity();
@@ -25,6 +27,14 @@ public class LocalPlayer : Entity
 
         if (isCrouch)
             playerHeight = 1.4f;
+
+        if (Keyboard.Current.IsPressedThisFrame(Keys.F5))
+        {
+            CommandPacket packet = new CommandPacket();
+            packet.Command = "reload";
+            Network.SendPacket(packet.Write());
+        }
+
 
         Camera.Position = Position + new Vector3(0, playerHeight, 0);
         if (Vector3.Distance(lastPacketPosition, Position) > 0.3f)
@@ -122,7 +132,7 @@ public class LocalPlayer : Entity
             direction.X += 1;
         }
 
-        if (Keyboard.Current.IsPressed(Keys.Space) && IsGrounded)
+        if (Keyboard.Current.IsPressed(Keys.Space) && (IsGrounded || IS_FLYMODE))
         {
             SetVelocityY(8);
         }
@@ -140,4 +150,9 @@ public class LocalPlayer : Entity
     }
 
     private Vector3 lastPacketPosition = Vector3.Zero;
+
+    public override EntityType GetEntityType()
+    {
+        return EntityType.Unregisterd;
+    }
 }

@@ -1,4 +1,5 @@
-﻿using Shared.Worlds;
+﻿using Client.Rendering;
+using Shared.Worlds;
 
 namespace Client.Entities;
 
@@ -6,10 +7,18 @@ public class EntityFactory
 {
     public static Entity CreateEntity(EntityType entityType)
     {
-        if (entityType == EntityType.Player)
+        if (entityType == DefaultEntities.Player)
+        {
             return new OnlinePlayer();
+        }
 
+        Console.WriteLine($"EntityFactory: {entityType.Name}");
 
-        throw new Exception("No entity locally of this type.");
+        GenericOnlineEntity visibleEntity = new GenericOnlineEntity(entityType);
+        Console.WriteLine("Mesh is " + entityType.Mesh);
+        if (entityType.Mesh == "?")
+            return visibleEntity;
+        visibleEntity.SetMesh(RenderData.models[entityType.Mesh]);
+        return visibleEntity;
     }
 }

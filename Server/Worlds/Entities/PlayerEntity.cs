@@ -1,11 +1,14 @@
 ﻿using Shared.Mathf;
 using Shared.Networking;
+using Shared.Networking.Packets.Writers;
 using Shared.Worlds;
 
 namespace Server.Worlds;
 
 public class PlayerEntity : ServerEntity
 {
+
+
     public PlayerEntity(Connection connection)
     {
         this.Connection = connection;
@@ -36,13 +39,12 @@ public class PlayerEntity : ServerEntity
             GetItemInHand()?.Type.ExecuteBlockRightClick(new ItemClickBlockArgs(this, args.Block, args.Normal));
         };
 
-        OnSetVelocity += () =>
+        OnCommand += (command) =>
         {
-            SetVelocityPacket packet = new SetVelocityPacket();
-            packet.X = Velocity.X;
-            packet.Y = Velocity.Y;
-            packet.Z = Velocity.Z;
-            connection.SendPacket(packet.Write());
+            if (command.ToLower() == "reload")
+            {
+                Program.Restart();
+            }
         };
     }
 
@@ -143,11 +145,25 @@ public class PlayerEntity : ServerEntity
         return (int)MathF.Floor(position / 16f);
     }
 
+    public event Action<string>? OnCommand;
+
+    public void RunCommand(string command)
+    {
+        OnCommand?.Invoke(command);
+    }
+
     private void OnPlayerPacket(Packet packet)
     {
         if (packet.GetPacketType() == PacketType.PlayerMove)
         {
             HandlePlayerMove(packet);
+        }
+
+        if (packet.GetPacketType() == PacketType.Command)
+        {
+            CommandPacket commandPacket = new CommandPacket();
+            commandPacket.Read(packet);
+            RunCommand(commandPacket.Command);
         }
 
         if (packet.GetPacketType() == PacketType.PlayerInteract)
@@ -307,7 +323,7 @@ public class PlayerEntity : ServerEntity
 
     public override EntityType GetEntityType()
     {
-        return EntityType.Player;
+        return DefaultEntities.Player;
     }
 
     public event Action<PlaySoundArgs>? OnSoundPlay;
@@ -352,5 +368,13 @@ public class PlayerEntity : ServerEntity
         };
 
         Connection.SendPacket(playSoundPacket.Write());
+    }
+
+    public void SendToast(string message, float displayTime = 7)
+    {
+        ToastPacket toastPacket = new ToastPacket();
+        toastPacket.msg = message;
+        toastPacket.time = displayTime;
+        Connection.SendPacket(toastPacket.Write());
     }
 }

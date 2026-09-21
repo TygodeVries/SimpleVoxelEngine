@@ -54,5 +54,6 @@ public enum ResourceType
 {
     BLOCKS_TEXTURES,
     ITEMS_TEXTURES,
-    SOUND
+    SOUND,
+    MODELS
 }

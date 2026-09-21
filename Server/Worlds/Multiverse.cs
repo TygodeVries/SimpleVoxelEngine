@@ -38,6 +38,10 @@ public class Multiverse
         };
     }
 
+    public static List<PlayerEntity> GetPlayers()
+    {
+        return world.GetEntitiesOfType<PlayerEntity>();
+    }
     public static event Action<PlayerEntity>? OnPlayerJoin;
 
     private static void World_OnBlockPlace((Block block, int x, int y, int z) obj)

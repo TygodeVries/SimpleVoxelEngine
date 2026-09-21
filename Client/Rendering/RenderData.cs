@@ -41,12 +41,76 @@ public class RenderData
         OnItemTextureUpdated?.Invoke();
     }
 
+    public static Dictionary<string, Mesh> models = new Dictionary<string, Mesh>();
+
+    public static void SetModels(List<string> names, byte[] data)
+    {
+        if (names == null || data == null || names.Count == 0) return;
+
+        using (MemoryStream stream = new MemoryStream(data))
+        using (BinaryReader reader = new BinaryReader(stream))
+        {
+            foreach (string name in names)
+            {
+                if (stream.Position >= stream.Length) break;
+
+                Mesh mesh = ReadMeshFromStream(reader);
+
+                models[name] = mesh;
+            }
+        }
+    }
+
+    private static Mesh ReadMeshFromStream(BinaryReader reader)
+    {
+        int vertsCount = reader.ReadInt32();
+        float[] verts = new float[vertsCount];
+        for (int i = 0; i < vertsCount; i++)
+        {
+            verts[i] = reader.ReadSingle();
+        }
+
+        int indCount = reader.ReadInt32();
+        uint[] inds = new uint[indCount];
+        for (int i = 0; i < indCount; i++)
+        {
+            inds[i] = reader.ReadUInt32();
+        }
+
+        float[]? normals = null;
+        int normalCount = reader.ReadInt32();
+        if (normalCount != -1)
+        {
+            normals = new float[normalCount];
+            for (int i = 0; i < normalCount; i++)
+            {
+                normals[i] = reader.ReadSingle();
+            }
+        }
+
+        float[]? uvs = null;
+        int uvsCount = reader.ReadInt32();
+        if (uvsCount != -1)
+        {
+            uvs = new float[uvsCount];
+            for (int i = 0; i < uvsCount; i++)
+            {
+                uvs[i] = reader.ReadSingle();
+            }
+        }
+
+        Mesh mesh = new Mesh(verts, inds, normals, uvs);
+        return mesh;
+    }
+
+
     public static event Action? OnItemTextureUpdated;
 
     public static ShaderProgram? DefaultChunkShader { get; private set; }
     public static ShaderProgram? SingleChunkShader { get; private set; }
     public static ShaderProgram? DepthShader { get; private set; }
     public static ShaderProgram? UIShader { get; private set; }
+    public static ShaderProgram? UITextShader { get; private set; }
     public static ShaderProgram? SkyboxShader { get; private set; }
     public static ShaderProgram? SelectionShader { get; private set; }
     public static Texture PlayerTexture;
@@ -65,6 +129,10 @@ public class RenderData
         UIShader = new ShaderProgram(
             File.ReadAllText("Shaders/ui.vert"),
             File.ReadAllText("Shaders/ui.frag"));
+
+        UITextShader = new ShaderProgram(
+             File.ReadAllText("Shaders/uitext.vert"),
+            File.ReadAllText("Shaders/uitext.frag"));
 
         SingleChunkShader = new ShaderProgram(
             File.ReadAllText("Shaders/default.vert"),

@@ -5,7 +5,6 @@ namespace Server.Worlds;
 
 public abstract class ServerEntity : Entity
 {
-    public abstract EntityType GetEntityType();
     public ServerEntity()
     {
 
@@ -19,6 +18,7 @@ public abstract class ServerEntity : Entity
             Type = GetEntityType()
         };
 
+        Console.WriteLine($"Sending packet for type {GetEntityType().Name}");
         Program.server.BroadcastPacket(spawnEntityPacket.Write());
 
         // When we move, send a packet
@@ -34,6 +34,8 @@ public abstract class ServerEntity : Entity
 
             Program.server.BroadcastPacket(moveEntityPacket.Write());
         };
+
+        Teleport(Position);
 
         base.OnSpawn();
     }

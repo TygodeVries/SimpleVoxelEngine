@@ -24,6 +24,10 @@ public struct Vector3
         Z = 0;
     }
 
+    public override string ToString()
+    {
+        return $"({X}, {Y}, {Z})";
+    }
     public static Vector3 operator +(Vector3 a, Vector3 b)
     {
         return new Vector3(
@@ -32,6 +36,19 @@ public struct Vector3
             a.Z + b.Z
         );
     }
+
+    public static bool operator ==(Vector3 a, Vector3 b)
+    {
+        return a.X == b.X &&
+               a.Y == b.Y &&
+               a.Z == b.Z;
+    }
+
+    public static bool operator !=(Vector3 a, Vector3 b)
+    {
+        return !(a == b);
+    }
+
 
     public static Vector3 operator -(Vector3 a, Vector3 b)
     {

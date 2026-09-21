@@ -2,7 +2,7 @@
 
 using Client.Input;
 using Client.Networking;
-using Client.Sound;
+using Client.Rendering.UI;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
@@ -35,7 +35,6 @@ public class GameCanvas : GameWindow
     protected override void OnLoad()
     {
 
-        SoundPlayer.Start();
 
         // ** Setup a bunch of stuff **
         // Enable depth drawing
@@ -372,8 +371,6 @@ public class GameCanvas : GameWindow
         if ((float)args.Time < 0.1f)
             Time.DeltaTime = (float)args.Time;
 
-        SoundPlayer.Update();
-
         if (Keyboard.Current.IsPressedThisFrame(Keys: OpenTK.Windowing.GraphicsLibraryFramework.Keys.F1))
         {
             hideUi = !hideUi;
@@ -432,9 +429,12 @@ public class GameCanvas : GameWindow
 
         OnUpdate?.Invoke();
 
+        ToastManager.Update(Time.DeltaTime);
+
         Keyboard.Current.EndOfFrame();
         Mouse.Current.EndOfFrame();
         Network.Tick();
+        Schedule.Tick();
 
         if (isLocked)
         {

@@ -1,7 +1,6 @@
-﻿using Shared.Mathf;
-using System.Globalization;
+﻿using System.Globalization;
 using Vector4 = OpenTK.Mathematics.Vector4;
-namespace Client.Rendering;
+namespace Shared.Mathf;
 
 public class Mesh
 {
@@ -155,6 +154,14 @@ public class Mesh
     {
         this.vertices = vertices;
         this.indices = indices;
+    }
+
+    public Mesh(float[] vertices, uint[] indices, float[]? normals, float[]? uvs)
+    {
+        this.vertices = vertices;
+        this.indices = indices;
+        this.normals = normals;
+        this.uvs = uvs;
     }
 
     public Mesh(Vector3[] vertices, uint[] indices, Vector2[] uvs) : this(vertices, indices)

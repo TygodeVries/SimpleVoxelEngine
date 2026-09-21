@@ -139,11 +139,18 @@ public class Program
         {
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine("(>_<) Oops! (We detected a crash, and kept the console open. Press enter to continue)");
+
+            Process.Start(Environment.ProcessPath);
+
             Console.ReadLine();
+
+            // Exit the current instance
+            Environment.Exit(0);
         }
         else
         {
             Console.WriteLine("The game has closed!");
+            Console.ReadLine();
         }
     }
 

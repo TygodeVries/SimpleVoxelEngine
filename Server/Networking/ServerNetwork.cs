@@ -1,6 +1,7 @@
 ﻿using Server.Plugins;
 using Server.Worlds;
 using Shared;
+using Shared.Mathf;
 using Shared.Networking;
 using Shared.Worlds;
 using Spectre.Console;
@@ -113,6 +114,7 @@ public class ServerNetwork
 
         if (listener.Pending())
         {
+            Console.WriteLine("Pending Connection!");
             TcpClient client = listener.AcceptTcpClient();
             Connection connection = new TcpConnection(client);
             connections.Add(connection);
@@ -120,9 +122,95 @@ public class ServerNetwork
         }
     }
 
+    public static byte[] GetModelData(Mesh[] meshes)
+    {
+        if (meshes == null || meshes.Length == 0) return new byte[0];
+
+        using (MemoryStream stream = new MemoryStream())
+        using (BinaryWriter writer = new BinaryWriter(stream))
+        {
+            foreach (Mesh mesh in meshes)
+            {
+                if (mesh == null) continue;
+
+                if (mesh.vertices != null && mesh.vertices.Length > 0)
+                {
+                    writer.Write(mesh.vertices.Length);
+                    foreach (float v in mesh.vertices)
+                    {
+                        writer.Write(v);
+                    }
+                }
+                else
+                {
+                    writer.Write(0);
+                }
+
+                if (mesh.indices != null && mesh.indices.Length > 0)
+                {
+                    writer.Write(mesh.indices.Length);
+                    foreach (uint idx in mesh.indices)
+                    {
+                        writer.Write(idx);
+                    }
+                }
+                else
+                {
+                    writer.Write(0);
+                }
+
+                if (mesh.normals != null && mesh.normals.Length > 0)
+                {
+                    writer.Write(mesh.normals.Length);
+                    foreach (float n in mesh.normals)
+                    {
+                        writer.Write(n);
+                    }
+                }
+                else
+                {
+                    writer.Write(-1);
+                }
+
+                if (mesh.uvs != null && mesh.uvs.Length > 0)
+                {
+                    writer.Write(mesh.uvs.Length);
+                    foreach (float uv in mesh.uvs)
+                    {
+                        writer.Write(uv);
+                    }
+                }
+                else
+                {
+                    writer.Write(-1);
+                }
+            }
+
+            return stream.ToArray();
+        }
+    }
+
     public void CatchupConnection(Connection connection)
     {
         connection.ReadPacketsLoop();
+
+        ResourcePackPacket modelPackPacket = new ResourcePackPacket();
+        modelPackPacket.resourceType = ResourceType.MODELS;
+
+        // Load the names of the models
+        modelPackPacket.names = new List<string>();
+
+        List<Mesh> meshes = new List<Mesh>();
+        foreach (var v in PluginLoader.modelBuilder)
+        {
+            modelPackPacket.names.Add(v.Item1);
+            meshes.Add(v.Item2);
+        }
+
+        modelPackPacket.resourceData = GetModelData(meshes.ToArray());
+        connection.SendPacket(modelPackPacket.Write());
+
+
 
         // First send the textures
         ResourcePackPacket texturepackPacket = new ResourcePackPacket();
@@ -178,6 +266,7 @@ public class ServerNetwork
         // Load all world data
         Multiverse.SendWorldData(connection, Multiverse.GetMainWorld());
 
+        Console.WriteLine("Spawning player...");
         Multiverse.GetMainWorld().SpawnEntity(player);
     }
 

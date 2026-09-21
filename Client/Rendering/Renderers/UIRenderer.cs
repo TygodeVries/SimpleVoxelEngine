@@ -1,6 +1,5 @@
 ﻿using Shared.Mathf;
 using Matrix4 = OpenTK.Mathematics.Matrix4;
-
 namespace Client.Rendering;
 
 public class UIRenderer : MeshRenderer

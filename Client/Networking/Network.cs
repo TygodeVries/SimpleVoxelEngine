@@ -1,4 +1,6 @@
-﻿using Shared;
+﻿using Client.Rendering.UI;
+using Shared;
+using Shared.Mathf;
 using Shared.Networking;
 using Shared.Worlds;
 using System.Net.Sockets;
@@ -10,10 +12,14 @@ namespace Client.Networking
         private static Connection? connection;
         public static void Connect(bool isTcpServer, string address)
         {
+
+            Console.WriteLine($"Connecting with {address}...");
             if (connection != null)
                 connection.Disconnect();
+
             Registry.Clear();
             LocalWorld.ResetWorld();
+            ToastManager.Clear();
 
             if (isTcpServer)
             {
@@ -31,8 +37,6 @@ namespace Client.Networking
             }
             else
             {
-                Thread.Sleep(3000); // #TEMP WAIT FOR SERVER
-
                 Console.WriteLine("Connecting to dreams server...");
                 TcpClient client = new TcpClient(Dreams.DREAMS_IP, Dreams.DREAMS_PORT);
                 connection = new TcpConnection(client);
@@ -52,11 +56,80 @@ namespace Client.Networking
             connection!.OnDisconnect += Connection_OnDisconnect;
         }
 
+        private static int reconnecting;
+
         private static void Connection_OnDisconnect()
         {
             Console.WriteLine("The connection to the server was lost!");
-            // #TODO -> Go to backup server
+
+            connection = null;
+
+            Schedule.Run(() =>
+            {
+
+                ToastManager.Clear();
+                ToastManager.Send("<red>Connection Lost...", 300);
+
+                if (Interlocked.Exchange(ref reconnecting, 1) == 1)
+                    return;
+
+                _ = ReconnectAsync();
+            });
         }
+
+        private static async Task ReconnectAsync()
+        {
+            try
+            {
+                while (true)
+                {
+                    Console.WriteLine("Waiting for server...");
+
+                    if (await IsServerAvailableAsync("127.0.0.1", 5050))
+                    {
+                        Schedule.Run(() =>
+                        {
+                            ToastManager.Clear();
+                            ToastManager.Send("<green>Reconnecting...", 300);
+
+                            Connect(true, "127.0.0.1:5050");
+                        });
+
+                        return;
+                    }
+
+                    await Task.Delay(1000);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Reconnect failed: {ex}");
+            }
+            finally
+            {
+                Interlocked.Exchange(ref reconnecting, 0);
+            }
+        }
+
+        private static async Task<bool> IsServerAvailableAsync(
+            string address,
+            int port)
+        {
+            try
+            {
+                using var client = new TcpClient();
+
+                await client.ConnectAsync(address, port);
+
+                return client.Connected;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
 
         public static void Tick()
         {
@@ -68,7 +141,9 @@ namespace Client.Networking
             if (connection != null)
                 connection.SendPacket(packet);
             else
-                throw new Exception("Server not connected!");
+            {
+                // No connection, #TODO need to figgure out for something, not just disconnect.
+            }
         }
 
         public static event Action<Packet>? OnPacket;

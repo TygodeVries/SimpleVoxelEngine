@@ -24,40 +24,35 @@ public class TcpConnection : Connection
 
     public async override Task ReadPacketsLoop()
     {
+        await Task.Delay(500);
+
         try
         {
             NetworkStream stream = client.GetStream();
 
-            while (IsConnected())
+            while (IsConnected() && !readCancellation.Token.IsCancellationRequested)
             {
                 byte[] sizeHeader = new byte[4];
 
-                await stream.ReadExactlyAsync(
+                int bytesRead = await stream.ReadAtLeastAsync(
                     sizeHeader,
-                    0,
                     4,
-                    readCancellation.Token
+                    throwOnEndOfStream: false,
+                    cancellationToken: readCancellation.Token
                 );
 
-                int size = BitConverter.ToInt32(sizeHeader, 0);
-
-                if (size <= 0 || size > MaxPacketSize)
+                if (bytesRead < 4)
                 {
-                    throw new InvalidDataException(
-                        $"Invalid packet size: {size}"
-                    );
+                    Disconnect();
+                    break;
                 }
 
-                byte[] packet = new byte[size];
+                int packetSize = BitConverter.ToInt32(sizeHeader, 0);
 
-                await stream.ReadExactlyAsync(
-                    packet,
-                    0,
-                    size,
-                    readCancellation.Token
-                );
+                byte[] payload = new byte[packetSize];
+                await stream.ReadExactlyAsync(payload, readCancellation.Token);
 
-                pendingPackets.Enqueue(packet);
+                pendingPackets.Enqueue(payload);
             }
         }
         catch (OperationCanceledException)

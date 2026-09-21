@@ -2,6 +2,7 @@
 using OpenTK.Mathematics;
 namespace Client.Rendering;
 
+using Shared.Mathf;
 public class MeshRenderer : Renderer
 {
     internal ShaderProgram shader;

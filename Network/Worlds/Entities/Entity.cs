@@ -23,6 +23,9 @@ public abstract class Entity
     {
         return world;
     }
+
+    public event Action? OnWorldChange;
+
     /// <summary>
     /// A bad function to call if you don't know what you are doing!!!
     /// </summary>
@@ -30,6 +33,7 @@ public abstract class Entity
     public void SetWorld(World world)
     {
         this.world = world;
+        OnWorldChange?.Invoke();
     }
 
     public Entity()
@@ -93,7 +97,6 @@ public abstract class Entity
             z
         ), invokeEvent);
     }
-
 
     public Vector3 Position { get; private set; } = Vector3.Zero;
     public event Action? OnTeleport;
@@ -339,8 +342,12 @@ public abstract class Entity
     {
         World? world = GetWorld();
         if (world == null)
+        {
+            Console.WriteLine("Entity is not part of a world.");
             return;
-
+        }
         world.DestroyEntity(this);
     }
+
+    public abstract EntityType GetEntityType();
 }

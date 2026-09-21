@@ -105,6 +105,8 @@ public class World
         graveYard.Add(entity);
     }
 
+    public event Action? OnTick;
+
     public void Tick()
     {
         foreach (Entity entity in entities)
@@ -112,25 +114,37 @@ public class World
             entity.Tick();
         }
 
-        foreach (Entity entity in graveYard)
+
+        RunSpawn();
+        OnTick?.Invoke();
+    }
+
+    public void RunSpawn()
+    {
+        lock (entities) lock (graveYard) lock (futureEntities)
         {
-            if (entity == null)
-                continue;
+            foreach (Entity entity in graveYard)
+            {
+                if (entity == null)
+                    continue;
 
-            entity.OnDestroy();
-            entities.Remove(entity);
+                entity.OnDestroy();
+                entities.Remove(entity);
+            }
+
+            graveYard.Clear();
+
+            foreach (Entity entity in futureEntities)
+            {
+                EntityType type = entity.GetEntityType();
+                Console.WriteLine($"Spawning {type.Name}");
+                entity.OnSpawn();
+                entities.Add(entity);
+                OnEntitySpawn?.Invoke(new OnEntitySpawnArgs(entity));
+            }
+
+            futureEntities.Clear();
         }
-
-        graveYard.Clear();
-
-        foreach (Entity entity in futureEntities)
-        {
-            entity.OnSpawn();
-            entities.Add(entity);
-            OnEntitySpawn?.Invoke(new OnEntitySpawnArgs(entity));
-        }
-
-        futureEntities.Clear();
     }
 
     public event Action<PlaySoundArgs>? OnSoundPlay;
@@ -242,6 +256,11 @@ public class World
         var cords = (chunk.X, chunk.Y, chunk.Z);
         chunks.Remove(cords);
         OnRemoveChunk?.Invoke(chunk);
+    }
+
+    public Block GetBlockAt(Vector3 pos)
+    {
+        return GetBlockAt(pos.iX, pos.iY, pos.iZ);
     }
 
     public Block GetBlockAt(int x, int y, int z)
@@ -460,18 +479,12 @@ public class World
 
     public List<Entity> GetEntitiesNear(Vector3 position, float radius)
     {
-        List<Entity> e = new List<Entity>();
-
-        foreach (Entity entity in entities)
-        {
-            if (Vector3.Distance(entity.Position, position) < radius)
-            {
-                e.Add(entity);
-            }
-        }
-
-        return e;
+        return entities
+            .Where(entity => Vector3.Distance(entity.Position, position) < radius)
+            .OrderBy(entity => Vector3.Distance(entity.Position, position))
+            .ToList();
     }
+
 
     public List<Chunk> GetChunks()
     {

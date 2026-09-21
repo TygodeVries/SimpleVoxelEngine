@@ -24,5 +24,7 @@ public enum PacketType : byte
     PlayerInteract = 19,
     InventoryChange = 20,
     SetVelocity = 21,
-    PlaySound = 22
+    PlaySound = 22,
+    Toast = 23,
+    Command = 24,
 }
