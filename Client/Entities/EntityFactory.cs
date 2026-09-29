@@ -7,9 +7,14 @@ public class EntityFactory
 {
     public static Entity CreateEntity(EntityType entityType)
     {
-        if (entityType == DefaultEntities.Player)
+        if (entityType == Defaults.PlayerEntity)
         {
             return new OnlinePlayer();
+        }
+
+        if (entityType == Defaults.ItemEntity)
+        {
+            return new LocalItemEntity();
         }
 
         Console.WriteLine($"EntityFactory: {entityType.Name}");

@@ -83,10 +83,10 @@ public class Chunk
     /// <summary>
     /// Using this function will NOT send a packet to the clients. please use World.SetBlock instead!
     /// </summary>
-    /// <param Name="blockType"></param>
-    /// <param Name="x"></param>
-    /// <param Name="y"></param>
-    /// <param Name="z"></param>
+    /// <param Identifier="blockType"></param>
+    /// <param Identifier="x"></param>
+    /// <param Identifier="y"></param>
+    /// <param Identifier="z"></param>
     public void SetBlock(short blockType, int x, int y, int z)
     {
         // If the block is already this value, we don't have to do anything.

@@ -278,6 +278,442 @@ public class Mesh
         }
     }
 
+    public static Mesh CreateQuad(float width = 1f, float height = 1f, Vector2[]? uvs = null)
+    {
+        float hw = width * 0.5f;
+        float hh = height * 0.5f;
 
+        Vector3[] vertices =
+        {
+            new Vector3(-hw,  hh, 0),
+            new Vector3( hw,  hh, 0),
+            new Vector3( hw, -hh, 0),
+            new Vector3(-hw, -hh, 0)
+        };
+
+
+        uint[] indices =
+        {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+        if (uvs == null)
+        {
+            uvs = new Vector2[]
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 0),
+                new Vector2(1, 1),
+                new Vector2(0, 1)
+            };
+        }
+
+        Vector3[] normals =
+        {
+        new Vector3(0, 0, 1),
+        new Vector3(0, 0, 1),
+        new Vector3(0, 0, 1),
+        new Vector3(0, 0, 1)
+    };
+
+        Mesh mesh = new Mesh(vertices, indices, uvs, normals);
+        mesh.RecalculateTangents();
+
+        return mesh;
+    }
+
+    public static Mesh CreatePlane(float width = 1f, float depth = 1f)
+    {
+        float hw = width * 0.5f;
+        float hd = depth * 0.5f;
+
+        Vector3[] vertices =
+        {
+        new Vector3(-hw, 0, -hd),
+        new Vector3( hw, 0, -hd),
+        new Vector3( hw, 0,  hd),
+        new Vector3(-hw, 0,  hd)
+    };
+
+        uint[] indices =
+        {
+        0, 2, 1,
+        2, 0, 3
+    };
+
+        Vector2[] uvs =
+        {
+        new Vector2(0, 0),
+        new Vector2(1, 0),
+        new Vector2(1, 1),
+        new Vector2(0, 1)
+    };
+
+        Vector3[] normals =
+        {
+        Vector3.Up,
+        Vector3.Up,
+        Vector3.Up,
+        Vector3.Up
+    };
+
+        Mesh mesh = new Mesh(vertices, indices, uvs, normals);
+        mesh.RecalculateTangents();
+
+        return mesh;
+    }
+
+    public static Mesh CreateCube(float size = 1f, Vector2[]? customUvs = null)
+    {
+        float h = size * 0.5f;
+
+        // Each face has its own vertices so that normals and UVs
+        // can be different between faces.
+        Vector3[] vertices =
+        {
+        // Front
+        new Vector3(-h, -h,  h),
+        new Vector3( h, -h,  h),
+        new Vector3( h,  h,  h),
+        new Vector3(-h,  h,  h),
+
+        // Back
+        new Vector3( h, -h, -h),
+        new Vector3(-h, -h, -h),
+        new Vector3(-h,  h, -h),
+        new Vector3( h,  h, -h),
+
+        // Left
+        new Vector3(-h, -h, -h),
+        new Vector3(-h, -h,  h),
+        new Vector3(-h,  h,  h),
+        new Vector3(-h,  h, -h),
+
+        // Right
+        new Vector3(h, -h,  h),
+        new Vector3(h, -h, -h),
+        new Vector3(h,  h, -h),
+        new Vector3(h, h, h),
+
+        // Top
+        new Vector3(-h, h,  h),
+        new Vector3(h,  h,  h),
+        new Vector3(h,  h, -h),
+        new Vector3(-h, h, -h),
+
+        // Bottom
+        new Vector3(-h, -h, -h),
+        new Vector3(h, -h, -h),
+        new Vector3(h, -h,  h),
+        new Vector3(-h, -h,  h)
+    };
+
+        uint[] indices =
+        {
+        // Front
+        0, 1, 2,
+        2, 3, 0,
+
+        // Back
+        4, 5, 6,
+        6, 7, 4,
+
+        // Left
+        8, 9, 10,
+        10, 11, 8,
+
+        // Right
+        12, 13, 14,
+        14, 15, 12,
+
+        // Top
+        16, 17, 18,
+        18, 19, 16,
+
+        // Bottom
+        20, 21, 22,
+        22, 23, 20
+    };
+
+        Vector2[] uvs = new Vector2[24];
+
+        if (customUvs != null)
+            for (int face = 0; face < 6; face++)
+            {
+                int i = face * 4;
+
+                uvs[i + 0] = customUvs[0];
+                uvs[i + 1] = customUvs[1];
+                uvs[i + 2] = customUvs[2];
+                uvs[i + 3] = customUvs[3];
+            }
+        else
+        {
+            for (int face = 0; face < 6; face++)
+            {
+                int i = face * 4;
+
+                uvs[i + 0] = new Vector2(0, 0);
+                uvs[i + 1] = new Vector2(0, 1);
+                uvs[i + 2] = new Vector2(1, 0);
+                uvs[i + 3] = new Vector2(1, 1);
+            }
+        }
+
+        Vector3[] normals =
+        {
+        // Front
+        new Vector3( 0,  0,  1),
+        new Vector3( 0,  0,  1),
+        new Vector3( 0,  0,  1),
+        new Vector3( 0,  0,  1),
+
+        // Back
+        new Vector3( 0,  0, -1),
+        new Vector3( 0,  0, -1),
+        new Vector3( 0,  0, -1),
+        new Vector3( 0,  0, -1),
+
+        // Left
+        new Vector3(-1,  0,  0),
+        new Vector3(-1,  0,  0),
+        new Vector3(-1,  0,  0),
+        new Vector3(-1,  0,  0),
+
+        // Right
+        new Vector3( 1,  0,  0),
+        new Vector3( 1,  0,  0),
+        new Vector3( 1,  0,  0),
+        new Vector3( 1,  0,  0),
+
+        // Top
+        new Vector3( 0,  1,  0),
+        new Vector3( 0,  1,  0),
+        new Vector3( 0, 1,  0),
+        new Vector3( 0, 1,  0),
+
+        // Bottom
+        new Vector3( 0, -1,  0),
+        new Vector3( 0, -1, 0),
+        new Vector3( 0, -1, 0),
+        new Vector3( 0, -1, 0)
+    };
+
+        Mesh mesh = new Mesh(vertices, indices, uvs, normals);
+        mesh.RecalculateTangents();
+
+        return mesh;
+    }
+
+    public static Mesh CreateTriangle(float size = 1f)
+    {
+        float h = size * 0.5f;
+
+        Vector3[] vertices =
+        {
+        new Vector3(-h, -h, 0),
+        new Vector3( h, -h, 0),
+        new Vector3( 0,  h, 0)
+    };
+
+        uint[] indices =
+        {
+        0, 1, 2
+    };
+
+        Vector2[] uvs =
+        {
+        new Vector2(0, 0),
+        new Vector2(1, 0),
+        new Vector2(0.5f, 1)
+    };
+
+        Vector3 normal = Vector3.Forwards;
+
+        Vector3[] normals =
+        {
+        normal,
+        normal,
+        normal
+    };
+
+        Mesh mesh = new Mesh(vertices, indices, uvs, normals);
+        mesh.RecalculateTangents();
+
+        return mesh;
+    }
+
+    public static Mesh CreateCylinder(
+        float radius = 0.5f,
+        float height = 1f,
+        int segments = 32)
+    {
+        segments = Math.Max(3, segments);
+
+        List<Vector3> vertices = new();
+        List<Vector2> uvs = new();
+        List<Vector3> normals = new();
+        List<uint> indices = new();
+
+        float halfHeight = height * 0.5f;
+
+        // Side vertices
+        for (int i = 0; i <= segments; i++)
+        {
+            float t = (float)i / segments;
+            float angle = t * MathF.PI * 2f;
+
+            float x = MathF.Cos(angle) * radius;
+            float z = MathF.Sin(angle) * radius;
+
+            Vector3 normal = new Vector3(x, 0, z).Normalized;
+
+            vertices.Add(new Vector3(x, -halfHeight, z));
+            vertices.Add(new Vector3(x, halfHeight, z));
+
+            normals.Add(normal);
+            normals.Add(normal);
+
+            uvs.Add(new Vector2(t, 0));
+            uvs.Add(new Vector2(t, 1));
+        }
+
+        // Side indices
+        for (int i = 0; i < segments; i++)
+        {
+            uint bottomLeft = (uint)(i * 2);
+            uint topLeft = bottomLeft + 1;
+            uint bottomRight = bottomLeft + 2;
+            uint topRight = bottomRight + 1;
+
+            indices.Add(bottomLeft);
+            indices.Add(bottomRight);
+            indices.Add(topRight);
+
+            indices.Add(topRight);
+            indices.Add(topLeft);
+            indices.Add(bottomLeft);
+        }
+
+        // Top center
+        uint topCenter = (uint)vertices.Count;
+
+        vertices.Add(new Vector3(0, halfHeight, 0));
+        normals.Add(Vector3.Up);
+        uvs.Add(new Vector2(0.5f, 0.5f));
+
+        for (int i = 0; i < segments; i++)
+        {
+            uint a = (uint)((i * 2) + 1);
+            uint b = (uint)(((i + 1) * 2) + 1);
+
+            indices.Add(topCenter);
+            indices.Add(a);
+            indices.Add(b);
+        }
+
+        // Bottom center
+        uint bottomCenter = (uint)vertices.Count;
+
+        vertices.Add(new Vector3(0, -halfHeight, 0));
+        normals.Add(-Vector3.Up);
+        uvs.Add(new Vector2(0.5f, 0.5f));
+
+        for (int i = 0; i < segments; i++)
+        {
+            uint a = (uint)(i * 2);
+            uint b = (uint)((i + 1) * 2);
+
+            indices.Add(bottomCenter);
+            indices.Add(b);
+            indices.Add(a);
+        }
+
+        Mesh mesh = new Mesh(
+            vertices.ToArray(),
+            indices.ToArray(),
+            uvs.ToArray(),
+            normals.ToArray()
+        );
+
+        mesh.RecalculateTangents();
+
+        return mesh;
+    }
+
+    public static Mesh CreateSphere(
+        float radius = 0.5f,
+        int segments = 32,
+        int rings = 16)
+    {
+        segments = Math.Max(3, segments);
+        rings = Math.Max(2, rings);
+
+        List<Vector3> vertices = new();
+        List<Vector2> uvs = new();
+        List<Vector3> normals = new();
+        List<uint> indices = new();
+
+        for (int y = 0; y <= rings; y++)
+        {
+            float v = (float)y / rings;
+            float phi = v * MathF.PI;
+
+            float sinPhi = MathF.Sin(phi);
+            float cosPhi = MathF.Cos(phi);
+
+            for (int x = 0; x <= segments; x++)
+            {
+                float u = (float)x / segments;
+                float theta = u * MathF.PI * 2f;
+
+                float sinTheta = MathF.Sin(theta);
+                float cosTheta = MathF.Cos(theta);
+
+                Vector3 normal = new Vector3(
+                    sinPhi * cosTheta,
+                    cosPhi,
+                    sinPhi * sinTheta
+                );
+
+                vertices.Add(normal * radius);
+                normals.Add(normal);
+                uvs.Add(new Vector2(u, v));
+            }
+        }
+
+        int rowSize = segments + 1;
+
+        for (int y = 0; y < rings; y++)
+        {
+            for (int x = 0; x < segments; x++)
+            {
+                uint i0 = (uint)((y * rowSize) + x);
+                uint i1 = i0 + 1;
+                uint i2 = (uint)(((y + 1) * rowSize) + x);
+                uint i3 = i2 + 1;
+
+                indices.Add(i0);
+                indices.Add(i2);
+                indices.Add(i1);
+
+                indices.Add(i1);
+                indices.Add(i2);
+                indices.Add(i3);
+            }
+        }
+
+        Mesh mesh = new Mesh(
+            vertices.ToArray(),
+            indices.ToArray(),
+            uvs.ToArray(),
+            normals.ToArray()
+        );
+
+        mesh.RecalculateTangents();
+
+        return mesh;
+    }
 }
 

@@ -39,8 +39,6 @@
 
     public class Toast
     {
-        private static readonly Font font =
-            new Font("Textures/Font.png", 16, 16);
 
         private const float StartX = -1.0f;
         private const float EndX = 0.02f;
@@ -50,7 +48,7 @@
 
         private float DisplayTime = 7.0f;
 
-        private readonly TextRenderer textRenderer;
+        private readonly UITextRenderer textRenderer;
 
         private float timer = 0.0f;
 
@@ -67,7 +65,8 @@
         {
             DisplayTime = time;
 
-            textRenderer = new TextRenderer(font);
+            textRenderer = new UITextRenderer(RenderData.DefaultFont);
+            textRenderer.TextWidth = 40;
             textRenderer.SetText(message);
 
             GameCanvas.AddRenderer(textRenderer);

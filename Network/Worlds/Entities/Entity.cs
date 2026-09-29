@@ -9,7 +9,7 @@ public abstract class Entity
     /// <summary>
     /// A bad function to call if you don't know what you are doing!!!
     /// </summary>
-    /// <param Name="RegistryId"></param>
+    /// <param Identifier="RegistryId"></param>
     public void SetId(int id)
     {
         this.Id = id;
@@ -29,7 +29,7 @@ public abstract class Entity
     /// <summary>
     /// A bad function to call if you don't know what you are doing!!!
     /// </summary>
-    /// <param Name="RegistryId"></param>
+    /// <param Identifier="RegistryId"></param>
     public void SetWorld(World world)
     {
         this.world = world;
@@ -54,6 +54,7 @@ public abstract class Entity
     public bool IsGrounded { get; private set; }
 
     public Vector3 Velocity { get; private set; } = Vector3.Zero;
+    public Vector3 Rotation;
 
     public event Action? OnSetVelocity;
 
@@ -139,6 +140,11 @@ public abstract class Entity
     }
 
 
+    public void ApplyDrag()
+    {
+        Velocity *= 0.98f;
+    }
+
     /// <summary>
     /// Taken from old project, did not want to write all this again.
     /// </summary>
@@ -148,7 +154,7 @@ public abstract class Entity
 
         if (world == null)
         {
-            Console.WriteLine("Can not run physics on an entity not assigned to a world!");
+            Console.WriteLine("Can not run physics on an entity not assigned to a World!");
             return;
         }
 
@@ -343,11 +349,16 @@ public abstract class Entity
         World? world = GetWorld();
         if (world == null)
         {
-            Console.WriteLine("Entity is not part of a world.");
+            Console.WriteLine("Entity is not part of a World.");
             return;
         }
         world.DestroyEntity(this);
     }
 
     public abstract EntityType GetEntityType();
+
+    public virtual void OnMetadataChange(string key, string value)
+    {
+
+    }
 }

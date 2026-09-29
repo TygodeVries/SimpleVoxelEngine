@@ -1,4 +1,5 @@
-﻿using OpenTK.Graphics.OpenGL;
+﻿using Client.Rendering.UI;
+using OpenTK.Graphics.OpenGL;
 using Shared.Mathf;
 using Shared.Worlds;
 
@@ -12,9 +13,11 @@ public class RenderData
     private static int solidChunkIndex;
     public const int SolidIndexCount = 36;
 
-
+    public static Font DefaultFont = new Font("Textures/Font.png", 16, 16);
     public static Texture? BlockTexture { get; private set; }
     public static TextureMap? BlockTexturesMap { get; private set; }
+    public static ImageTexture? UITexture { get; private set; } = ImageTexture.LoadFromPng("Textures/UI.png");
+    public static TextureMap? UITextureMap;
 
     public static void SetBlockTexture(List<string> names, Texture texture)
     {
@@ -27,16 +30,16 @@ public class RenderData
         LocalWorld.Regenerate();
     }
 
-    public static Texture? ItemTexture { get; private set; }
+    public static ImageTexture? ItemTexture { get; private set; }
     public static TextureMap? ItemTexturesMap { get; private set; }
 
-    public static void SetItemTexture(List<string> names, Texture texture)
+    public static void SetItemTexture(List<string> names, ImageTexture texture)
     {
         ItemTexture = texture;
 
-        ItemTexturesMap = new TextureMap(names, (ImageTexture)ItemTexture);
+        ItemTexturesMap = new TextureMap(names, ItemTexture);
 
-        Console.WriteLine($"Item Texture of {((ImageTexture)ItemTexture).width}x{((ImageTexture)ItemTexture).height} loaded!");
+        Console.WriteLine($"Item Texture of {ItemTexture.width}x{ItemTexture.height} loaded!");
 
         OnItemTextureUpdated?.Invoke();
     }
@@ -107,6 +110,7 @@ public class RenderData
     public static event Action? OnItemTextureUpdated;
 
     public static ShaderProgram? DefaultChunkShader { get; private set; }
+    public static ShaderProgram? EntityShader { get; private set; }
     public static ShaderProgram? SingleChunkShader { get; private set; }
     public static ShaderProgram? DepthShader { get; private set; }
     public static ShaderProgram? UIShader { get; private set; }
@@ -116,11 +120,17 @@ public class RenderData
     public static Texture PlayerTexture;
     public static void SetupDefaults()
     {
+        UITextureMap = new TextureMap(UITexture!);
+
         BlockTexturesMap = new TextureMap(0, 0);
         PlayerTexture = ImageTexture.LoadFromPng("Textures/Player.png", flip: true);
         DefaultChunkShader = new ShaderProgram(
             File.ReadAllText("Shaders/default.vert"),
             File.ReadAllText("Shaders/default.frag"));
+
+        EntityShader = new ShaderProgram(
+            File.ReadAllText("Shaders/entity.vert"),
+            File.ReadAllText("Shaders/entity.frag"));
 
         SelectionShader = new ShaderProgram(
             File.ReadAllText("Shaders/select.vert"),

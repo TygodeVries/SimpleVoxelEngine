@@ -23,6 +23,13 @@ public class LocalPlayer : Entity
 
         isCrouch = Keyboard.Current.IsPressed(Keys.LeftShift);
 
+        if (Keyboard.Current.IsPressedThisFrame(Keys.L))
+        {
+            BlockBreakEntity entity = new BlockBreakEntity();
+            GetWorld().SpawnEntity(entity, -2);
+            entity.Teleport(Position);
+        }
+
         float playerHeight = 1.7f;
 
         if (isCrouch)
@@ -52,6 +59,11 @@ public class LocalPlayer : Entity
     private int renderDebugMode = 0;
     private void Interact()
     {
+        if (Keyboard.Current.IsPressedThisFrame(Keys.Q))
+        {
+            Network.SendPacket(new DropItemPacket().Write());
+        }
+
         if (Keyboard.Current.IsPressedThisFrame(Keys.F9))
         {
             renderDebugMode++;
@@ -76,6 +88,13 @@ public class LocalPlayer : Entity
                 playerInteractPacket.InteractionType = InteractionType.LeftClickAir;
             }
 
+            Network.SendPacket(playerInteractPacket.Write());
+        }
+
+        if (Mouse.Current.LeftReleasedThisFrame())
+        {
+            PlayerInteractPacket playerInteractPacket = new PlayerInteractPacket();
+            playerInteractPacket.InteractionType = InteractionType.ReleaseLeftMouse;
             Network.SendPacket(playerInteractPacket.Write());
         }
 

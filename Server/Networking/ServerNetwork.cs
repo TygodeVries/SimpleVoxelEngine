@@ -263,7 +263,7 @@ public class ServerNetwork
             connection.SendPacket(authenticatePacket.Write());
         };
 
-        // Load all world data
+        // Load all World data
         Multiverse.SendWorldData(connection, Multiverse.GetMainWorld());
 
         Console.WriteLine("Spawning player...");

@@ -4,7 +4,7 @@ using OpenTK.Graphics.OpenGL;
 using Shared.Mathf;
 using System.Globalization;
 
-public class TextRenderer : MeshRenderer
+public class UITextRenderer : MeshRenderer
 {
     private ImageTexture texture;
     private Font font;
@@ -23,7 +23,7 @@ public class TextRenderer : MeshRenderer
         }
     }
 
-    public TextRenderer(Font font) : base(RenderData.UITextShader)
+    public UITextRenderer(Font font) : base(RenderData.UITextShader)
     {
         texture = font.GetTexture();
         this.font = font;
@@ -131,6 +131,8 @@ public class TextRenderer : MeshRenderer
         return result;
     }
 
+    public float TextWidth = 10;
+
     public void SetText(string text)
     {
         this.text = text ?? "";
@@ -154,7 +156,7 @@ public class TextRenderer : MeshRenderer
         List<Vector3> colors = new();
         List<uint> indices = new();
 
-        float characterWidth = font.GetCharacterWidth() / 40f;
+        float characterWidth = font.GetCharacterWidth() / TextWidth;
         float characterHeight = font.GetCharacterHeight();
 
         int visibleCharacterIndex = 0;
@@ -257,7 +259,7 @@ public class TextRenderer : MeshRenderer
     public Vector2 position = new Vector2(0.5f, 0.5f);
     public float scale = 0.0007f;
 
-    public UIRenderer? Parent;
+    public UIImageRenderer? Parent;
 
     public Vector2 GetSize()
     {

@@ -27,4 +27,7 @@ public enum PacketType : byte
     PlaySound = 22,
     Toast = 23,
     Command = 24,
+    DropItem = 25,
+    EntityMetadata = 26,
+    BlockBreakProgress = 27
 }

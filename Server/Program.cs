@@ -3,6 +3,7 @@
 using Server.Networking;
 using Server.Plugins;
 using Server.Worlds;
+using Server.Worlds.Items;
 using Shared.Mathf;
 using Shared.Worlds;
 using Spectre.Console;
@@ -14,14 +15,19 @@ public class Program
 
     public static void Main()
     {
+
+        Registry.OnItemRegistered += (item) =>
+        {
+            item.OnBlockLeftClick += ItemBehaviour.BreakBlock;
+        };
+
         AnsiConsole.MarkupLine("[white]Loading Plugins...[/]");
         Stopwatch fullTime = Stopwatch.StartNew();
         PluginLoader.LoadAllPluginsAsync().Wait();
 
         AnsiConsole.MarkupLine("Loading Registry...");
         Registry.InRegistryStage = true;
-        DefaultBlocks.Register();
-        DefaultEntities.Register();
+        Defaults.Register();
         PluginLoader.RegisterAll();
         Registry.InRegistryStage = false;
 
@@ -82,7 +88,7 @@ public class Program
             Schedule.Tick();
             server.ReadPackets();
 
-            Thread.Sleep(5);
+            Thread.Sleep(10);
         }
     }
 

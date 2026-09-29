@@ -7,7 +7,7 @@ namespace Server.Worlds;
 
 public class PlayerEntity : ServerEntity
 {
-
+    public event Action<ItemClickBlockArgs>? OnLeftClickEmptyHand;
 
     public PlayerEntity(Connection connection)
     {
@@ -31,7 +31,13 @@ public class PlayerEntity : ServerEntity
 
         OnLeftClickBlock += (args) =>
         {
-            GetItemInHand()?.Type.ExecuteBlockLeftClick(new ItemClickBlockArgs(this, args.Block, args.Normal));
+            var itemClickArgs = new ItemClickBlockArgs(this, args.Block, args.Normal);
+            var itemInHand = GetItemInHand();
+
+
+            itemInHand?.Type.ExecuteBlockLeftClick(itemClickArgs);
+            if (itemInHand == null)
+                OnLeftClickEmptyHand?.Invoke(itemClickArgs);
         };
 
         OnRightClickBlock += (args) =>
@@ -124,6 +130,30 @@ public class PlayerEntity : ServerEntity
         return Inventory.GetItem(CurrentHotbarSlot);
     }
 
+    public void SetItemInMainHand(ItemStack? itemStack)
+    {
+        Inventory.SetSlot(CurrentHotbarSlot, itemStack);
+    }
+
+    public void AddCountInMainHand(int amount)
+    {
+        ItemStack? stack = GetItemInHand();
+
+        if (stack == null)
+            return;
+
+        stack.Count += amount;
+        if (stack.Count == 0)
+        {
+            Console.WriteLine("Item ran out!");
+            SetItemInMainHand(null);
+            return;
+        }
+
+        Console.WriteLine($"Item count is now {stack.Count}");
+        SetItemInMainHand(stack);
+    }
+
     private void Inventory_OnSlotSet(OnSlotSetArgs obj)
     {
         // Whenever the inventory of the player changes, we need to send that to their client.
@@ -152,11 +182,41 @@ public class PlayerEntity : ServerEntity
         OnCommand?.Invoke(command);
     }
 
+    /// <summary>
+    /// #TODO Implement this!
+    /// </summary>
+    /// <returns></returns>
+    public Vector3 GetForward()
+    {
+        return Vector3.Forwards;
+    }
+
+    public void DropItem()
+    {
+        ItemStack? hand = GetItemInHand();
+        if (hand == null)
+            return;
+
+        ItemStack drop = new ItemStack(hand.Type, 1);
+        GetWorld()?.DropItem(GetEye(), drop, (GetForward() * 6) + new Vector3(0, 6, 0));
+        AddCountInMainHand(-1);
+    }
+
+    public Vector3 GetEye()
+    {
+        return Position + new Vector3(0, 1, 0);
+    }
+
     private void OnPlayerPacket(Packet packet)
     {
         if (packet.GetPacketType() == PacketType.PlayerMove)
         {
             HandlePlayerMove(packet);
+        }
+
+        if (packet.GetPacketType() == PacketType.DropItem)
+        {
+            DropItem();
         }
 
         if (packet.GetPacketType() == PacketType.Command)
@@ -192,6 +252,11 @@ public class PlayerEntity : ServerEntity
             {
                 OnRightClick?.Invoke();
             }
+
+            if (pip.InteractionType == InteractionType.ReleaseLeftMouse)
+            {
+                StopBreakingBlock();
+            }
         }
 
         if (packet.GetPacketType() == PacketType.SelectSlot)
@@ -204,6 +269,99 @@ public class PlayerEntity : ServerEntity
             OnSlotChange?.Invoke(new PlayerChangeSlotArgs(oldSlot, CurrentHotbarSlot));
         }
     }
+
+    public void StartBreakingBlock(Vector3 block)
+    {
+        BlockBreakProgress = 0;
+        IsBreakingBlock = true;
+        targetBreakBlock = block;
+        lastBreakStage = -1;
+
+        BlockBreakProgressPacket packet = new BlockBreakProgressPacket();
+        packet.position = block;
+        packet.stage = 0;
+
+        Program.server.BroadcastPacket(packet.Write());
+    }
+
+
+    public void StopBreakingBlock()
+    {
+
+        if (targetBreakBlock != null)
+        {
+            BlockBreakProgressPacket blockBreakProgressPacket = new BlockBreakProgressPacket();
+            blockBreakProgressPacket.position = targetBreakBlock.Value;
+            blockBreakProgressPacket.stage = -1;
+
+            Program.server.BroadcastPacket(blockBreakProgressPacket.Write());
+        }
+        BlockBreakProgress = 0;
+        IsBreakingBlock = false;
+        targetBreakBlock = null;
+    }
+
+    public override void Tick()
+    {
+        base.Tick();
+
+        if (!IsBreakingBlock)
+            return;
+
+        BlockBreakProgress += Time.DeltaTime;
+
+        if (targetBreakBlock == null)
+        {
+            StopBreakingBlock();
+            return;
+        }
+
+        var world = GetWorld();
+        if (world == null)
+        {
+            StopBreakingBlock();
+            return;
+        }
+
+        var block = world.GetBlockAt(targetBreakBlock.Value);
+        float hardness = block.Hardness;
+
+        if (hardness <= 0)
+        {
+            world.BreakBlock(targetBreakBlock.Value);
+            StopBreakingBlock();
+            return;
+        }
+
+        float progress = BlockBreakProgress / hardness;
+
+        int stage = Math.Clamp((int)(progress * 4f), 0, 3);
+
+        if (stage != lastBreakStage)
+        {
+            lastBreakStage = stage;
+
+            BlockBreakProgressPacket packet = new BlockBreakProgressPacket
+            {
+                position = targetBreakBlock.Value,
+                stage = stage
+            };
+
+            Program.server.BroadcastPacket(packet.Write());
+        }
+
+        if (progress >= 1f)
+        {
+            world.BreakBlock(targetBreakBlock.Value);
+            StopBreakingBlock();
+        }
+    }
+    private int lastBreakStage = -1;
+
+
+    private float BlockBreakProgress = 0;
+    public bool IsBreakingBlock { get; private set; } = false;
+    private Vector3? targetBreakBlock;
 
     public override void Teleport(Vector3 position)
     {
@@ -323,7 +481,7 @@ public class PlayerEntity : ServerEntity
 
     public override EntityType GetEntityType()
     {
-        return DefaultEntities.Player;
+        return Defaults.PlayerEntity;
     }
 
     public event Action<PlaySoundArgs>? OnSoundPlay;

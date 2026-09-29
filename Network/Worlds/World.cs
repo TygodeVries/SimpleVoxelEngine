@@ -276,13 +276,13 @@ public class World
         if (chunks.TryGetValue((chunkX, chunkY, chunkZ), out Chunk? chunk))
         {
             if (chunk == null)
-                return DefaultBlocks.AIR;
+                return Defaults.AirBlock;
 
             return Registry.GetBlock(chunk.GetBlock(blockX, blockY, blockZ));
         }
         else
         {
-            return DefaultBlocks.AIR;
+            return Defaults.AirBlock;
         }
     }
 
@@ -304,7 +304,7 @@ public class World
         Block airBlock = Registry.GetBlock("air");
         Block currentBlock = GetBlockAt(x, y, z);
         SetBlockAt(airBlock, x, y, z);
-        currentBlock.TriggerBlockBreak(new ActionArguments.BlockBrokenArgs(new Vector3(x, y, z)));
+        currentBlock.ExecuteBlockBreak(new ActionArguments.BlockBrokenArgs(new Vector3(x, y, z), this));
     }
 
     public void BreakBlock(Vector3 pos)
@@ -494,11 +494,17 @@ public class World
 
     public void PrintEntityDump()
     {
-        Console.WriteLine($"A list of all entities in this world ({entities.Count} in total): ");
+        Console.WriteLine($"A list of all entities in this World ({entities.Count} in total): ");
         foreach (Entity entity in entities)
         {
             Console.WriteLine($"{entity.Id}: {entity.GetType().Name}");
         }
+    }
+
+    public event Action<(Vector3 position, ItemStack itemStack, Vector3 velocity)>? OnDropItem;
+    public void DropItem(Vector3 position, ItemStack itemStack, Vector3 velocity)
+    {
+        OnDropItem?.Invoke((position, itemStack, velocity));
     }
 }
 

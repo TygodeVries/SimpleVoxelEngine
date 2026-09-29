@@ -46,7 +46,7 @@ public class SoundPlayer
     public static void AddAudioResource(List<string>? names, byte[] data)
     {
         if (names == null)
-            throw new NullReferenceException("Audio Name is null!");
+            throw new NullReferenceException("Audio Identifier is null!");
 
         SoundPlayer.LoadAudio(names[0], data);
     }

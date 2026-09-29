@@ -2,14 +2,14 @@
 using Matrix4 = OpenTK.Mathematics.Matrix4;
 namespace Client.Rendering;
 
-public class UIRenderer : MeshRenderer
+public class UIImageRenderer : MeshRenderer
 {
-    public void SetTexture(ImageTexture texture)
+    public void SetTexture(ImageTexture? texture)
     {
         this.texture = texture;
     }
-    private ImageTexture texture;
-    public UIRenderer() : base(RenderData.UIShader)
+    private ImageTexture? texture;
+    public UIImageRenderer() : base(RenderData.UIShader)
     {
         sort = 5;
         shader.SetTextureId("u_Color", 0);
@@ -43,7 +43,7 @@ public class UIRenderer : MeshRenderer
     {
         if (uvs.Length != 4)
             throw new ArgumentException(
-                "UIRenderer requires exactly 4 UV coordinates.",
+                "UIImageRenderer requires exactly 4 UV coordinates.",
                 nameof(uvs)
             );
 
@@ -66,6 +66,7 @@ public class UIRenderer : MeshRenderer
 
         if (texture == null)
             return;
+
         texture.Use(OpenTK.Graphics.OpenGL.TextureUnit.Texture0);
 
 
@@ -80,7 +81,7 @@ public class UIRenderer : MeshRenderer
     public Vector2 position = new Vector2(0.5f, 0.5f);
     public float scale = 0.02f;
 
-    public UIRenderer? Parent;
+    public UIImageRenderer? Parent;
 
     /// <summary>
     /// Gets the size of this UI element in pixels.

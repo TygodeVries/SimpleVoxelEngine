@@ -35,6 +35,15 @@ public class TextureMap
         col = height / blockHeight;
     }
 
+    public TextureMap(ImageTexture texture)
+    {
+        this.width = texture.width;
+        this.height = texture.height;
+
+        row = width / blockWidth;
+        col = height / blockHeight;
+    }
+
     public TextureMap(int width, int height)
     {
         this.width = width;
@@ -60,7 +69,13 @@ public class TextureMap
 
     public Vector2[] GetUV(string textureName)
     {
-        return GetUV(names.IndexOf(textureName.ToLower()));
+        int index = names.IndexOf(textureName.ToLower());
+        if (index == -1)
+        {
+            throw new FileNotFoundException($"The texture {textureName} could not be found!");
+        }
+
+        return GetUV(index);
     }
 
     public Vector2[] GetUV(int textureId)

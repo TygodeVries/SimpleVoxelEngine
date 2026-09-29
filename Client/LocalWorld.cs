@@ -3,6 +3,7 @@ using Client.Networking;
 using Client.Rendering;
 using Client.Rendering.UI;
 using Shared.Networking;
+using Shared.Networking.Packets.Writers;
 using Shared.Worlds;
 
 namespace Client;
@@ -70,6 +71,8 @@ public class LocalWorld
         RenderData.SingleChunkShader.SetVector4("u_TextureInfo", new OpenTK.Mathematics.Vector4(RenderData.BlockTexturesMap.row, RenderData.BlockTexturesMap.col, 16, 0));
     }
 
+    private static Dictionary<(int, int, int), BlockBreakEntity> blockBreakers = new Dictionary<(int, int, int), BlockBreakEntity>();
+
     private static int localPlayerId = -1;
     private static void OnPacket(Shared.Networking.Packet packet)
     {
@@ -79,6 +82,42 @@ public class LocalWorld
             regData.Read(packet);
 
             Registry.LoadAll(regData.Data);
+        }
+
+        if (packet.GetPacketType() == PacketType.BlockBreakProgress)
+        {
+            BlockBreakProgressPacket blockBreakProgressPacket = new BlockBreakProgressPacket();
+            blockBreakProgressPacket.Read(packet);
+
+            int x = blockBreakProgressPacket.position.iX;
+            int y = blockBreakProgressPacket.position.iY;
+            int z = blockBreakProgressPacket.position.iZ;
+
+            if (blockBreakProgressPacket.stage == -1)
+            {
+                if (blockBreakers.ContainsKey((x, y, z)))
+                {
+                    BlockBreakEntity bbe = blockBreakers[(x, y, z)];
+                    World.DestroyEntity(bbe);
+                    blockBreakers.Remove((x, y, z));
+                }
+            }
+            else
+            {
+                if (blockBreakers.ContainsKey((x, y, z)))
+                {
+                    BlockBreakEntity bbe = blockBreakers[(x, y, z)];
+                    bbe.OnMetadataChange("amount", $"{blockBreakProgressPacket.stage}");
+                }
+                else
+                {
+                    BlockBreakEntity bbe = new BlockBreakEntity();
+                    World.SpawnEntity(bbe, -10);
+                    bbe.OnMetadataChange("amount", $"{blockBreakProgressPacket.stage}");
+                    blockBreakers.Add((x, y, z), bbe);
+                    bbe.Teleport(x + 0.5f, y + 0.5f, z + 0.5f);
+                }
+            }
         }
 
         if (packet.GetPacketType() == PacketType.Error)
@@ -116,6 +155,8 @@ public class LocalWorld
             // Fit ourselfs into the empty slot
             World.SpawnEntity(localPlayer, authenticatePacket.EntityId);
             World.Tick();
+
+            LocalInventory.ForceUpdate();
         }
 
         if (packet.GetPacketType() == Shared.Networking.PacketType.SpawnEntity)
@@ -156,6 +197,22 @@ public class LocalWorld
 
             entity.Teleport(moveEntityPacket.X, moveEntityPacket.Y, moveEntityPacket.Z);
             LocalWorld.World.RunSpawn();
+        }
+
+        if (packet.GetPacketType() == PacketType.EntityMetadata)
+        {
+            LocalWorld.World.RunSpawn();
+            EntityMetadataPacket entityMetadataPacket = new EntityMetadataPacket();
+            entityMetadataPacket.Read(packet);
+
+            Entity? entity = World.GetEntityWithId(entityMetadataPacket.Id);
+            if (entity == null)
+            {
+                Console.WriteLine("Invalid entity RegistryId for EntityMetaData");
+                return;
+            }
+
+            entity.OnMetadataChange(entityMetadataPacket.Key, entityMetadataPacket.Value);
         }
 
         /*

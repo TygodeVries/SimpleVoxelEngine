@@ -99,7 +99,7 @@ public class Packet
 
         WriteBool(true);
         WriteInt(itemStack.Count);
-        WriteString(itemStack.Type.Name);
+        WriteString(itemStack.Type.Identifier);
     }
 
     // Read methods

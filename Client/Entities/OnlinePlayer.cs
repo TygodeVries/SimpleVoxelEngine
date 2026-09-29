@@ -26,6 +26,6 @@ public class OnlinePlayer : VisibleEntity
 
     public override EntityType GetEntityType()
     {
-        return DefaultEntities.Player;
+        return Defaults.PlayerEntity;
     }
 }

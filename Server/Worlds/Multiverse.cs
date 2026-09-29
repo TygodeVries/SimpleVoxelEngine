@@ -1,10 +1,13 @@
-﻿using Shared.Networking;
+﻿using Server.Worlds.Entities;
+using Shared.Networking;
 using Shared.Worlds;
 
 namespace Server.Worlds;
 
 public class Multiverse
 {
+    // #TODO support mutliple worlds
+
     private static World world = new World();
     public static World GetMainWorld()
     {
@@ -20,6 +23,15 @@ public class Multiverse
             {
                 OnPlayerJoin?.Invoke(player);
             }
+        };
+
+        world.OnDropItem += (args) =>
+        {
+            ItemEntity itemEntity = new ItemEntity(args.itemStack);
+            itemEntity.Teleport(args.position + new Shared.Mathf.Vector3(0.5f, 0.5f, 0.5f));
+            itemEntity.SetVelocity(args.velocity);
+
+            world.SpawnEntity(itemEntity);
         };
 
         world.OnSoundPlay += (args) =>
@@ -83,19 +95,7 @@ public class Multiverse
         {
             if (entity is ServerEntity serverEntity)
             {
-                SpawnEntityPacket spawnEntityPacket = new SpawnEntityPacket();
-                spawnEntityPacket.Id = serverEntity.Id;
-                spawnEntityPacket.Type = serverEntity.GetEntityType();
-
-                connection.SendPacket(spawnEntityPacket.Write());
-
-                MoveEntityPacket moveEntityPacket = new MoveEntityPacket();
-                moveEntityPacket.Id = serverEntity.Id;
-                moveEntityPacket.X = serverEntity.Position.X;
-                moveEntityPacket.Y = serverEntity.Position.Y;
-                moveEntityPacket.Z = serverEntity.Position.Z;
-
-                connection.SendPacket(moveEntityPacket.Write());
+                serverEntity.SendToClient(connection);
             }
         }
     }

@@ -157,7 +157,7 @@ public class ShaderProgram
     /// <summary>
     /// Get the location of the Uniform inside of the shader
     /// </summary>
-    /// <param Name="Identifier"></param>
+    /// <param Identifier="Identifier"></param>
     /// <returns></returns>
     public int GetUniformLocation(string name)
     {

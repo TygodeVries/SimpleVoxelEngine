@@ -111,7 +111,7 @@ public class Registry
         itemType.Deserialize(data);
         itemTypes.Add(itemType);
 
-        Console.WriteLine($"Loaded Item of Type: '{itemType.Name}'");
+        Console.WriteLine($"Loaded Item of Type: '{itemType.Identifier}'");
         return itemType;
     }
 
@@ -126,7 +126,7 @@ public class Registry
         return entityType;
     }
 
-    public static Block CreateBlock(string name)
+    public static Block CreateBlock(string identifier)
     {
         if (!InRegistryStage)
         {
@@ -134,19 +134,41 @@ public class Registry
             throw new Exception("CreateBlock() can only be called in OnRegister()");
         }
 
-        Console.WriteLine($"> Adding block {name} to registry.");
+        Console.WriteLine($"> Adding block: '{identifier}' to registry.");
 
 
-        Block block = new Block((short)blockTypes.Count, name);
+        Block block = new Block()
+        {
+            Identifier = identifier,
+            RegistryId = (short)blockTypes.Count
+        };
         blockTypes.Add(block);
         return block;
     }
 
-    public static Block? GetBlock(string name)
+    public static Block CreateBlock(string identifier, Block block)
+    {
+        if (!InRegistryStage)
+        {
+            Console.WriteLine("CreateBlock() can only be called in OnRegister()");
+            throw new Exception("CreateBlock() can only be called in OnRegister()");
+        }
+
+        Console.WriteLine($"> Adding block: '{identifier}' to registry.");
+
+
+        block.RegistryId = (short)blockTypes.Count;
+        block.Identifier = identifier;
+
+        blockTypes.Add(block);
+        return block;
+    }
+
+    public static Block? GetBlock(string identifier)
     {
         return blockTypes.First(o =>
         {
-            return o.Identifier == name;
+            return o.Identifier == identifier;
         });
     }
 
@@ -157,7 +179,7 @@ public class Registry
         return blockTypes[id];
     }
 
-    public static Item CreateItem(string name)
+    public static Item CreateItem(string identifier)
     {
         if (!InRegistryStage)
         {
@@ -166,16 +188,46 @@ public class Registry
         }
 
 
-        Console.WriteLine($"> Adding item {name} to registry.");
-        Item item = new Item((short)itemTypes.Count, name);
+        Console.WriteLine($"> Adding item: '{identifier}' to registry.");
+        Item item = new Item()
+        {
+            Identifier = identifier
+        };
+        item.SetRegistryId((short)itemTypes.Count);
         itemTypes.Add(item);
+
+        OnItemRegistered?.Invoke(item);
+
         return item;
     }
-    public static Item? GetItem(string name)
+
+    public static Item CreateItem(string identifier, Item type)
+    {
+        if (!InRegistryStage)
+        {
+            Console.WriteLine("CreateItem() can only be called in OnRegister()");
+            throw new Exception("CreateItem() can only be called in OnRegister()");
+        }
+
+        Console.WriteLine($"> Adding item: '{identifier}' to registry.");
+
+        type.Identifier = identifier;
+
+        type.SetRegistryId((short)itemTypes.Count);
+        itemTypes.Add(type);
+
+        OnItemRegistered?.Invoke(type);
+
+        return type;
+    }
+
+    public static event Action<Item>? OnItemRegistered;
+
+    public static Item? GetItem(string identifier)
     {
         return itemTypes.FirstOrDefault(o =>
         {
-            return o.Name == name;
+            return o.Identifier == identifier;
         });
     }
 
@@ -186,7 +238,7 @@ public class Registry
         return itemTypes[id];
     }
 
-    public static EntityType CreateEntity(string name)
+    public static EntityType CreateEntity(string identifier)
     {
         if (!InRegistryStage)
         {
@@ -194,9 +246,9 @@ public class Registry
             throw new Exception("CreateEntity() can only be called in OnRegister()");
         }
 
-        Console.WriteLine($"> Adding entity {name} to registry.");
+        Console.WriteLine($"> Adding entity: '{identifier}' to registry.");
 
-        EntityType entity = new EntityType((short)entityTypes.Count, name);
+        EntityType entity = new EntityType((short)entityTypes.Count, identifier);
         entityTypes.Add(entity);
         return entity;
     }

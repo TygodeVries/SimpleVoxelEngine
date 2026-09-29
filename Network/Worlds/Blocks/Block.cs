@@ -4,22 +4,21 @@ namespace Shared.Worlds;
 
 public class Block
 {
-    public static Block Unregistered { get; private set; } = new Block(-1, "unregistered");
+    public static Block Unregistered { get; private set; } = new Block()
+    {
+        Identifier = "unregistered",
+        RegistryId = -1
+    };
 
     /// <summary>
     /// The internal RegistryId of the block
     /// </summary>
-    public short RegistryId { get; private set; }
+    public short RegistryId { get; internal set; }
 
 
-    public string Identifier { get; private set; } = "invalid";
-    internal Block(short id, string identifier)
-    {
-        this.RegistryId = id;
-        this.Identifier = identifier;
-    }
+    public string Identifier { get; internal set; } = "invalid";
 
-    internal Block()
+    public Block()
     {
 
     }
@@ -46,10 +45,10 @@ public class Block
     /// Runs when the block is broken
     /// </summary>
     public event Action<BlockBrokenArgs>? OnBlockBreak;
-    internal void TriggerBlockBreak(BlockBrokenArgs args)
-    {
+    public virtual void ExecuteBlockBreak(BlockBrokenArgs args) =>
         OnBlockBreak?.Invoke(args);
-    }
+
+    public float Hardness = 1;
 
     public byte[] Serialize()
     {

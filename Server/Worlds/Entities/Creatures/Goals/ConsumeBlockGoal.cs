@@ -39,7 +39,7 @@ public class ConsumeBlockGoal : Goal
                                 blockZ) == block)
                         {
                             Creature.GetWorld().SetBlockAt(
-                                DefaultBlocks.AIR,
+                                Defaults.AirBlock,
                                 blockX,
                                 blockY,
                                 blockZ

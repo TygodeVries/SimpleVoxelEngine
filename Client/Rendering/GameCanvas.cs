@@ -66,11 +66,11 @@ public class GameCanvas : GameWindow
 
         SwitchDedicated();
 
-        InventoryUI.CreateUI();
+        Hotbar.Create();
 
         ImageTexture crossAir = ImageTexture.LoadFromPng("Textures/Crossair.png");
 
-        UIRenderer uiCrossAir = new UIRenderer();
+        UIImageRenderer uiCrossAir = new UIImageRenderer();
         uiCrossAir.SetTexture(crossAir);
         AddRenderer(uiCrossAir);
 
@@ -246,7 +246,7 @@ public class GameCanvas : GameWindow
             if (!renderer.visible)
                 continue;
 
-            if (hideUi && renderer.GetType() == typeof(UIRenderer))
+            if (hideUi && renderer.GetType() == typeof(UIImageRenderer))
             {
                 continue;
             }
@@ -326,9 +326,12 @@ public class GameCanvas : GameWindow
     /// <summary>
     /// Add a thing to renderer
     /// </summary>
-    /// <param Name="renderer"></param>
+    /// <param Identifier="renderer"></param>
     public static void AddRenderer(Renderer renderer)
     {
+        if (renderers.Contains(renderer))
+            return;
+
         if (renderer is ChunkRenderer chunk)
         {
             chunkRenderers.Add(chunk);
@@ -347,7 +350,7 @@ public class GameCanvas : GameWindow
     /// <summary>
     /// Remove a thing to render
     /// </summary>
-    /// <param Name="renderer"></param>
+    /// <param Identifier="renderer"></param>
     public static void RemoveRenderer(Renderer renderer)
     {
         renderers.Remove(renderer);
@@ -382,7 +385,7 @@ public class GameCanvas : GameWindow
         }
 
         // Update a max amount of chunks at a time!
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 3; i++)
         {
             ChunkRenderer? ch = ChunkRenderer.PopNearest();
             if (ch != null)
@@ -416,7 +419,7 @@ public class GameCanvas : GameWindow
             }
             else
             {
-                File.WriteAllBytes("TextureDump.png", ((ImageTexture)RenderData.ItemTexture).GetPngBytes());
+                File.WriteAllBytes("TextureDump.png", RenderData.ItemTexture.GetPngBytes());
             }
             Process.Start(new ProcessStartInfo
             {

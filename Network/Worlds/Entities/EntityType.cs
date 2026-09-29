@@ -58,4 +58,30 @@ public class EntityType
         memoryStream.Flush();
         return memoryStream.ToArray();
     }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is EntityType other && Name == other.Name;
+    }
+
+    public override int GetHashCode()
+    {
+        return Name.GetHashCode();
+    }
+
+    public static bool operator ==(EntityType? left, EntityType? right)
+    {
+        if (ReferenceEquals(left, right))
+            return true;
+
+        if (left is null || right is null)
+            return false;
+
+        return left.Name == right.Name;
+    }
+
+    public static bool operator !=(EntityType? left, EntityType? right)
+    {
+        return !(left == right);
+    }
 }

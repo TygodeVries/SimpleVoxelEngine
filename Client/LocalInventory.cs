@@ -8,10 +8,13 @@ public class LocalInventory
 
     public static void SetItem(int slot, ItemStack? item)
     {
-
         items[slot] = item;
         OnLocalInventoryChange?.Invoke();
-        Console.WriteLine($"Local inventory changed, slot {slot} now has item {item.Type.Name}");
+    }
+
+    public static ItemStack? GetItem(int slot)
+    {
+        return items[slot];
     }
 
     public static Item? GetItemType(int slot)
@@ -26,6 +29,11 @@ public class LocalInventory
     public static void Clear()
     {
         items = new ItemStack[9];
+        OnLocalInventoryChange?.Invoke();
+    }
+
+    public static void ForceUpdate()
+    {
         OnLocalInventoryChange?.Invoke();
     }
     public static event Action? OnLocalInventoryChange;

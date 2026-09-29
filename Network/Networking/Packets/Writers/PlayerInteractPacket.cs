@@ -39,5 +39,7 @@ public enum InteractionType : byte
     LeftClickBlock,
 
     RightClickAir,
-    LeftClickAir
+    LeftClickAir,
+
+    ReleaseLeftMouse
 }

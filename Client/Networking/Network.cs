@@ -20,6 +20,9 @@ namespace Client.Networking
             Registry.Clear();
             LocalWorld.ResetWorld();
             ToastManager.Clear();
+            Registry.InRegistryStage = true;
+            Defaults.Register();
+            Registry.InRegistryStage = false;
 
             if (isTcpServer)
             {

@@ -17,6 +17,8 @@ public class MeshRenderer : Renderer
         this.mesh = mesh;
     }
 
+    public bool doubleSided;
+
     private int vao;
     private int vbo;
     private int ebo;
@@ -109,8 +111,18 @@ public class MeshRenderer : Renderer
             Texture?.Use(TextureUnit.Texture0);
         }
 
+        if (doubleSided)
+        {
+            GL.Disable(EnableCap.CullFace);
+        }
+
         GL.BindVertexArray(vao);
         GL.DrawElements(PrimitiveType.Triangles, indexCount, DrawElementsType.UnsignedInt, 0);
+
+        if (doubleSided)
+        {
+            GL.Enable(EnableCap.CullFace);
+        }
     }
 
 
