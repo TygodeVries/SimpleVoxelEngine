@@ -125,6 +125,12 @@ public class GameCanvas : GameWindow
         }
     }
 
+
+    public static int GetChunkRendererCount()
+    {
+        return chunkRenderers.Count;
+    }
+
     private static void SwitchDedicated()
     {
         if (OperatingSystem.IsLinux())
@@ -134,8 +140,19 @@ public class GameCanvas : GameWindow
     }
     internal void World_OnAddChunk(Shared.Worlds.Chunk obj)
     {
-        ChunkRenderer chunkRenderer = new ChunkRenderer(obj);
-        GameCanvas.AddRenderer(chunkRenderer);
+        if (obj.HasBlocks())
+        {
+            ChunkRenderer chunkRenderer = new ChunkRenderer(obj);
+            GameCanvas.AddRenderer(chunkRenderer);
+            return;
+        }
+
+        obj.hasNoBlocks = true;
+        obj.OnGainedSingleBlock += () =>
+        {
+            ChunkRenderer chunkRenderer = new ChunkRenderer(obj);
+            GameCanvas.AddRenderer(chunkRenderer);
+        };
     }
 
     private Stopwatch fpsCounterStopwatch = new Stopwatch();
@@ -151,7 +168,7 @@ public class GameCanvas : GameWindow
             fpsCounterStopwatch.Restart();
             Console.WriteLine("FPS: " + frameCount);
 
-            Title = $"Game --- FPS: {frameCount} --- Chunks To Render: {ChunkRenderer.RequestingUpdate.Count}";
+            Title = $"Game --- FPS: {frameCount} --- Chunks To Render: {ChunkRenderer.RequestingUpdate.Count} --- Total Chunk Renderers: {GetChunkRendererCount()}";
             frameCount = 0;
         }
 

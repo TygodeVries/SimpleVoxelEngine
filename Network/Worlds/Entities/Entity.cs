@@ -17,7 +17,6 @@ public abstract class Entity
     }
 
     public event Action? OnEntityIdSet;
-
     private World? world;
     public World? GetWorld()
     {

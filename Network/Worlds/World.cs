@@ -17,6 +17,10 @@ public class World
         this.WorldGenerator = worldGenerator;
     }
 
+    public bool IsChunkLoaded(Vector3 chunk)
+    {
+        return chunks.ContainsKey((chunk.iX, chunk.iY, chunk.iZ));
+    }
     public void GenerateChunk(int x, int y, int z)
     {
         Chunk chunk = new Chunk(x, y, z);
@@ -34,6 +38,7 @@ public class World
         chunk.isDirty = true;
 
         AddChunk(chunk);
+        chunk.Optimize();
     }
 
     public Chunk GetOrGenerateChunkAt(int x, int y, int z)

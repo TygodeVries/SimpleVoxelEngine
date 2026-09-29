@@ -1,5 +1,6 @@
 ﻿using Shared.Mathf;
 using System.Runtime.InteropServices;
+using static Shared.Worlds.Chunk;
 
 namespace Shared.Worlds;
 
@@ -16,6 +17,172 @@ public class Chunk
         this.Z = z;
 
         Center = new Vector3((X * 16) + 8, (Y * 16) + 8, (Z * 16) + 8);
+    }
+
+    public bool HasBlocks()
+    {
+        if (GetChunkType() != ChunkType.Single)
+            return true;
+
+        if (data[0] == 0 && data[1] == 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Dont touch
+    /// </summary>
+    public bool hasNoBlocks = false;
+
+    private readonly bool[,] passability = new bool[6, 6];
+
+    /// <summary>
+    /// Returns true if you can reach the output direction from the input direction side of the chunk.
+    /// Assuming a 1x1x1 gab is required.
+    /// Also assuming you can only go trough transparent blocks.
+    /// </summary>
+    /// <param name="inputDirection"></param>
+    /// <param name="outputDirection"></param>
+    /// <returns></returns>
+    public bool CanPass(Direction input, Direction output)
+    {
+        return passability[(int)input, (int)output];
+    }
+
+    private void RecalculatePassability()
+    {
+        Array.Clear(passability);
+
+        if (type == ChunkType.Single)
+        {
+            if (IsPassable(0, 0, 0))
+            {
+                for (int input = 0; input < 6; input++)
+                {
+                    for (int output = 0; output < 6; output++)
+                    {
+                        if (input != output)
+                            passability[input, output] = true;
+                    }
+                }
+            }
+
+            return;
+        }
+
+        bool[,,] visited = new bool[16, 16, 16];
+
+        for (int x = 0; x < 16; x++)
+        {
+            for (int y = 0; y < 16; y++)
+            {
+                for (int z = 0; z < 16; z++)
+                {
+                    if (visited[x, y, z])
+                        continue;
+
+                    if (!IsPassable(x, y, z))
+                        continue;
+
+                    DirectionMask faces = FloodFill(
+                        x, y, z, visited);
+
+                    // This component connects every face it touches.
+                    for (int input = 0; input < 6; input++)
+                    {
+                        if (!faces.Has((Direction)input))
+                            continue;
+
+                        for (int output = 0; output < 6; output++)
+                        {
+                            if (input == output)
+                                continue;
+
+                            if (faces.Has((Direction)output))
+                                passability[input, output] = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private DirectionMask FloodFill(int startX, int startY, int startZ, bool[,,] visited)
+    {
+        DirectionMask faces = DirectionMask.None;
+
+        Queue<(int x, int y, int z)> queue = new();
+
+        visited[startX, startY, startZ] = true;
+        queue.Enqueue((startX, startY, startZ));
+
+        while (queue.Count > 0)
+        {
+            var (x, y, z) = queue.Dequeue();
+
+            if (x == 0)
+                faces |= DirectionMask.Left;
+
+            if (x == 15)
+                faces |= DirectionMask.Right;
+
+            if (y == 0)
+                faces |= DirectionMask.Down;
+
+            if (y == 15)
+                faces |= DirectionMask.Up;
+
+            if (z == 0)
+                faces |= DirectionMask.Back;
+
+            if (z == 15)
+                faces |= DirectionMask.Forward;
+
+            Visit(x + 1, y, z);
+            Visit(x - 1, y, z);
+
+            Visit(x, y + 1, z);
+            Visit(x, y - 1, z);
+
+            Visit(x, y, z + 1);
+            Visit(x, y, z - 1);
+        }
+
+        return faces;
+
+        void Visit(int x, int y, int z)
+        {
+            if (x < 0 || x >= 16 ||
+                y < 0 || y >= 16 ||
+                z < 0 || z >= 16)
+                return;
+
+            if (visited[x, y, z])
+                return;
+
+            if (!IsPassable(x, y, z))
+                return;
+
+            visited[x, y, z] = true;
+            queue.Enqueue((x, y, z));
+        }
+    }
+
+    private bool IsPassable(int x, int y, int z)
+    {
+        int blockId = GetBlock(x, y, z);
+        Block? block = Registry.GetBlock(blockId);
+
+        if (block == null)
+        {
+            Console.WriteLine($"Unknown Blocktype: {blockId}");
+            return false;
+        }
+
+        return block.Transparent || !block.Visible;
     }
 
     public Vector3 Center { get; private set; }
@@ -80,6 +247,8 @@ public class Chunk
         return type;
     }
 
+    public event Action? OnGainedSingleBlock;
+
     /// <summary>
     /// Using this function will NOT send a packet to the clients. please use World.SetBlock instead!
     /// </summary>
@@ -89,6 +258,12 @@ public class Chunk
     /// <param Identifier="z"></param>
     public void SetBlock(short blockType, int x, int y, int z)
     {
+        if (blockType != 0 && hasNoBlocks)
+        {
+            OnGainedSingleBlock?.Invoke();
+            hasNoBlocks = false;
+        }
+
         // If the block is already this value, we don't have to do anything.
         if (GetBlock(x, y, z) == blockType)
         {
@@ -120,6 +295,7 @@ public class Chunk
             int index = x + (y * 16) + (z * 16 * 16);
 
             data[index] = 1;
+
             return;
         }
 
@@ -195,6 +371,7 @@ public class Chunk
             data[index] = mapping[0];
             data[index + 1] = mapping[1];
         }
+
     }
 
     public short GetBlock(int x, int y, int z)
@@ -247,6 +424,7 @@ public class Chunk
     public void Optimize()
     {
         AttemptSimplify();
+        RecalculatePassability();
     }
 
     private void AttemptSimplify()
@@ -369,6 +547,40 @@ public class Chunk
         Complex = 2
     }
 
+    public enum Direction
+    {
+        Left,
+        Right,
+        Down,
+        Up,
+        Back,
+        Forward
+    }
+
 
     public bool isDirty = true;
+
+
+}
+
+[Flags]
+public enum DirectionMask
+{
+    None = 0,
+    Left = 1 << 0,
+    Right = 1 << 1,
+    Down = 1 << 2,
+    Up = 1 << 3,
+    Back = 1 << 4,
+    Forward = 1 << 5
+}
+
+public static class DirectionMaskExtensions
+{
+    public static bool Has(
+        this DirectionMask mask,
+        Direction direction)
+    {
+        return (mask & (DirectionMask)(1 << (int)direction)) != 0;
+    }
 }

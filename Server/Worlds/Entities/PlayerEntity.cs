@@ -2,6 +2,7 @@
 using Shared.Networking;
 using Shared.Networking.Packets.Writers;
 using Shared.Worlds;
+using static Shared.Worlds.Chunk;
 
 namespace Server.Worlds;
 
@@ -103,7 +104,7 @@ public class PlayerEntity : ServerEntity
     /// <summary>
     /// The view distance of the player
     /// </summary>
-    private const int ChunkLoadDistance = 5;
+    private const int ChunkLoadDistance = 20;
 
     /// <summary>
     /// The lists of chunks that are loaded
@@ -355,6 +356,9 @@ public class PlayerEntity : ServerEntity
             world.BreakBlock(targetBreakBlock.Value);
             StopBreakingBlock();
         }
+
+        // #TODO IMPORTANT: DON"T DO THIS
+        UpdateChunks();
     }
     private int lastBreakStage = -1;
 
@@ -402,19 +406,73 @@ public class PlayerEntity : ServerEntity
 
     private void UpdateChunks()
     {
-        HashSet<(int X, int Y, int Z)> wantedChunks = new();
+        World world = GetWorld();
 
-        for (int x = currentChunkX - ChunkLoadDistance; x <= currentChunkX + ChunkLoadDistance; x++)
+        int centerX = currentChunkX;
+        int centerY = currentChunkY;
+        int centerZ = currentChunkZ;
+        int distance = ChunkLoadDistance;
+
+        var wantedChunks = new HashSet<(int X, int Y, int Z)>();
+        var queue = new Queue<(int X, int Y, int Z)>();
+
+        var start = (centerX, centerY, centerZ);
+
+        wantedChunks.Add(start);
+        queue.Enqueue(start);
+
+        while (queue.Count > 0)
         {
-            for (int y = currentChunkY - ChunkLoadDistance; y <= currentChunkY + ChunkLoadDistance; y++)
+            var current = queue.Dequeue();
+
+            Chunk currentChunk = world.GetOrGenerateChunkAt(
+                current.X,
+                current.Y,
+                current.Z
+            );
+
+            bool isStart =
+                current.X == centerX &&
+                current.Y == centerY &&
+                current.Z == centerZ;
+
+            foreach (var direction in ChunkDirections)
             {
-                for (int z = currentChunkZ - ChunkLoadDistance; z <= currentChunkZ + ChunkLoadDistance; z++)
+                int nextX = current.X + direction.X;
+                int nextY = current.Y + direction.Y;
+                int nextZ = current.Z + direction.Z;
+
+                // Distance check first.
+                if (Math.Abs(nextX - centerX) > distance ||
+                    Math.Abs(nextY - centerY) > distance ||
+                    Math.Abs(nextZ - centerZ) > distance)
                 {
-                    wantedChunks.Add((x, y, z));
+                    continue;
                 }
+
+                var next = (nextX, nextY, nextZ);
+
+                // Already visited.
+                if (!wantedChunks.Add(next))
+                    continue;
+
+                // The starting chunk can always expand.
+                // Other chunks require a passable connection.
+                if (!isStart &&
+                    !currentChunk.CanPass(
+                        direction.Direction,
+                        direction.Opposite))
+                {
+                    // We added it above, so remove it again.
+                    wantedChunks.Remove(next);
+                    continue;
+                }
+
+                queue.Enqueue(next);
             }
         }
 
+        // Unload chunks that are no longer wanted.
         foreach (var chunk in loadedChunks)
         {
             if (!wantedChunks.Contains(chunk))
@@ -427,6 +485,7 @@ public class PlayerEntity : ServerEntity
             }
         }
 
+        // Load newly wanted chunks.
         foreach (var chunk in wantedChunks)
         {
             if (!loadedChunks.Contains(chunk))
@@ -439,6 +498,7 @@ public class PlayerEntity : ServerEntity
             }
         }
 
+        // Replace the loaded set.
         loadedChunks.Clear();
 
         foreach (var chunk in wantedChunks)
@@ -446,6 +506,8 @@ public class PlayerEntity : ServerEntity
             loadedChunks.Add(chunk);
         }
     }
+
+
 
     private void SendUnloadChunk(int chunkX, int chunkY, int chunkZ)
     {
@@ -535,4 +597,15 @@ public class PlayerEntity : ServerEntity
         toastPacket.time = displayTime;
         Connection.SendPacket(toastPacket.Write());
     }
+
+    private static readonly (int X, int Y, int Z, Direction Direction, Direction Opposite)[] ChunkDirections =
+    {
+        (-1,  0,  0, Direction.Left,    Direction.Right),
+        ( 1,  0,  0, Direction.Right,   Direction.Left),
+        ( 0, -1,  0, Direction.Down,    Direction.Up),
+        ( 0,  1,  0, Direction.Up,      Direction.Down),
+        ( 0,  0, -1, Direction.Back,    Direction.Forward),
+        ( 0,  0,  1, Direction.Forward, Direction.Back)
+    };
+
 }

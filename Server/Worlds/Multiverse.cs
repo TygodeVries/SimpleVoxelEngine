@@ -87,6 +87,15 @@ public class Multiverse
     internal static void TickWorlds()
     {
         world.Tick();
+
+        foreach (Chunk chunk in world.GetChunks())
+        {
+            if (chunk.isDirty)
+            {
+                chunk.Optimize();
+                chunk.isDirty = false;
+            }
+        }
     }
 
     internal static void SendWorldData(Connection connection, World world)

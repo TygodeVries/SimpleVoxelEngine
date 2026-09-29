@@ -15,20 +15,25 @@ public class LocalPlayer : Entity
     public bool isCrouch = false;
     public override void Tick()
     {
+        if (!GetWorld().IsChunkLoaded(Position / 16) && !dontSendPackets)
+        {
+            return;
+        }
+
         ApplyGravity();
         Movement();
 
-        ApplyPhysics(isCrouch && IsGrounded);
+        if (!dontSendPackets)
+        {
+            ApplyPhysics(isCrouch && IsGrounded);
+        }
+        else
+        {
+            Teleport(Position + (Velocity * Time.DeltaTime));
+        }
         Interact();
 
         isCrouch = Keyboard.Current.IsPressed(Keys.LeftShift);
-
-        if (Keyboard.Current.IsPressedThisFrame(Keys.L))
-        {
-            BlockBreakEntity entity = new BlockBreakEntity();
-            GetWorld().SpawnEntity(entity, -2);
-            entity.Teleport(Position);
-        }
 
         float playerHeight = 1.7f;
 
@@ -44,7 +49,7 @@ public class LocalPlayer : Entity
 
 
         Camera.Position = Position + new Vector3(0, playerHeight, 0);
-        if (Vector3.Distance(lastPacketPosition, Position) > 0.3f)
+        if (Vector3.Distance(lastPacketPosition, Position) > 0.3f && !dontSendPackets)
         {
             PlayerMovePacket packet = new PlayerMovePacket();
             packet.X = Position.X;
@@ -53,7 +58,20 @@ public class LocalPlayer : Entity
             lastPacketPosition = Position;
             Network.SendPacket(packet.Write());
         }
+
+        if (Keyboard.Current.IsPressedThisFrame(Keys.K))
+        {
+            dontSendPackets = !dontSendPackets;
+
+
+            if (dontSendPackets)
+                NormalSpeed = 30;
+            else
+                NormalSpeed = 4;
+        }
     }
+
+    private bool dontSendPackets = false;
 
 
     private int renderDebugMode = 0;
@@ -160,13 +178,16 @@ public class LocalPlayer : Entity
 
         float y = Velocity.Y;
 
-        float speed = 4;
+        float speed = NormalSpeed;
         if (isCrouch)
-            speed = 2;
+            speed = CrouchSpeed;
 
         SetVelocity(tDirection * speed);
         SetVelocityY(y);
     }
+
+    public float NormalSpeed = 4;
+    public float CrouchSpeed = 2;
 
     private Vector3 lastPacketPosition = Vector3.Zero;
 
