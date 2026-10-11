@@ -10,11 +10,25 @@ namespace Client.Entities;
 
 public class LocalPlayer : Entity
 {
+    private Vector3 lastPacketPosition = Vector3.Zero;
+    private Vector3 lastPacketDirection = Vector3.Zero;
     public const bool IS_FLYMODE = true;
 
     public bool isCrouch = false;
     public override void Tick()
     {
+        if (Keyboard.Current.IsPressedThisFrame(Keys.K))
+        {
+            Console.WriteLine($"Don't send packets is now: {dontSendPackets}");
+            dontSendPackets = !dontSendPackets;
+
+
+            if (dontSendPackets)
+                NormalSpeed = 30;
+            else
+                NormalSpeed = 4;
+        }
+
         if (!GetWorld().IsChunkLoaded(Position / 16) && !dontSendPackets)
         {
             return;
@@ -31,6 +45,7 @@ public class LocalPlayer : Entity
         {
             Teleport(Position + (Velocity * Time.DeltaTime));
         }
+
         Interact();
 
         isCrouch = Keyboard.Current.IsPressed(Keys.LeftShift);
@@ -49,25 +64,14 @@ public class LocalPlayer : Entity
 
 
         Camera.Position = Position + new Vector3(0, playerHeight, 0);
-        if (Vector3.Distance(lastPacketPosition, Position) > 0.3f && !dontSendPackets)
+        if (((Vector3.Distance(lastPacketPosition, Position) > 0.3f) || (Vector3.Distance(lastPacketDirection, Camera.Direction) > 0.3f)) && !dontSendPackets)
         {
             PlayerMovePacket packet = new PlayerMovePacket();
-            packet.X = Position.X;
-            packet.Y = Position.Y;
-            packet.Z = Position.Z;
+            packet.Position = Position;
+            packet.Direction = Camera.Direction;
+
             lastPacketPosition = Position;
             Network.SendPacket(packet.Write());
-        }
-
-        if (Keyboard.Current.IsPressedThisFrame(Keys.K))
-        {
-            dontSendPackets = !dontSendPackets;
-
-
-            if (dontSendPackets)
-                NormalSpeed = 30;
-            else
-                NormalSpeed = 4;
         }
     }
 
@@ -188,8 +192,6 @@ public class LocalPlayer : Entity
 
     public float NormalSpeed = 4;
     public float CrouchSpeed = 2;
-
-    private Vector3 lastPacketPosition = Vector3.Zero;
 
     public override EntityType GetEntityType()
     {

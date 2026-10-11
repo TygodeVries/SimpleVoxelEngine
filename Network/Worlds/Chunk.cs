@@ -557,6 +557,25 @@ public class Chunk
         Forward
     }
 
+    public static class DirectionExtensions
+    {
+        public static Direction FromVector3(Vector3 vector)
+        {
+            if (MathF.Abs(vector.X) >= MathF.Abs(vector.Y) &&
+                MathF.Abs(vector.X) >= MathF.Abs(vector.Z))
+            {
+                return vector.X >= 0 ? Direction.Right : Direction.Left;
+            }
+
+            if (MathF.Abs(vector.Y) >= MathF.Abs(vector.Z))
+            {
+                return vector.Y >= 0 ? Direction.Up : Direction.Down;
+            }
+
+            return vector.Z >= 0 ? Direction.Forward : Direction.Back;
+        }
+    }
+
 
     public bool isDirty = true;
 

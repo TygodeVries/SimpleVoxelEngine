@@ -10,7 +10,8 @@ public class SpawnEntityPacket : PacketWriter
     public override void Read(Packet packet)
     {
         Id = packet.ReadInt();
-        Type = Registry.GetEntity(packet.ReadInt());
+        int typeId = packet.ReadInt();
+        Type = Registry.GetEntity(typeId);
         Console.WriteLine(Type.Id);
     }
 

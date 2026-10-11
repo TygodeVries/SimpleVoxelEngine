@@ -68,6 +68,17 @@ public class LocalWorld
         RenderData.BlockTexturesMap.AddMapping(blockTexture.Forward, obj.RegistryId, BlockFace.Forward);
         RenderData.BlockTexturesMap.AddMapping(blockTexture.Backward, obj.RegistryId, BlockFace.Backward);
 
+        if (RenderData.BlockTexturesMap.TextureExists(blockTexture.Up + "_normal"))
+        {
+
+            RenderData.BlockTexturesMap.AddMapping(blockTexture.Up + "_normal", obj.RegistryId, BlockFace.Up);
+            RenderData.BlockTexturesMap.AddMapping(blockTexture.Down + "_normal", obj.RegistryId, BlockFace.Down);
+            RenderData.BlockTexturesMap.AddMapping(blockTexture.Left + "_normal", obj.RegistryId, BlockFace.Left);
+            RenderData.BlockTexturesMap.AddMapping(blockTexture.Right + "_normal", obj.RegistryId, BlockFace.Right);
+            RenderData.BlockTexturesMap.AddMapping(blockTexture.Forward + "_normal", obj.RegistryId, BlockFace.Forward);
+            RenderData.BlockTexturesMap.AddMapping(blockTexture.Backward + "_normal", obj.RegistryId, BlockFace.Backward);
+        }
+
         RenderData.SingleChunkShader.SetVector4("u_TextureInfo", new OpenTK.Mathematics.Vector4(RenderData.BlockTexturesMap.row, RenderData.BlockTexturesMap.col, 16, 0));
     }
 
@@ -289,11 +300,11 @@ public class LocalWorld
             Console.WriteLine("Resourcepack.");
             if (resourcepack.resourceType == ResourceType.BLOCKS_TEXTURES)
             {
-                RenderData.SetBlockTexture(resourcepack.names, ImageTexture.LoadFromBytes(resourcepack.resourceData));
+                RenderData.SetBlockTexture(resourcepack.names, ImageTexture.LoadFromBytes(resourcepack.resourceData), resourcepack.textureResolution);
             }
             else if (resourcepack.resourceType == ResourceType.ITEMS_TEXTURES)
             {
-                RenderData.SetItemTexture(resourcepack.names, ImageTexture.LoadFromBytes(resourcepack.resourceData));
+                RenderData.SetItemTexture(resourcepack.names, ImageTexture.LoadFromBytes(resourcepack.resourceData), resourcepack.textureResolution);
             }
             else if (resourcepack.resourceType == ResourceType.MODELS)
             {
@@ -321,8 +332,8 @@ public class LocalWorld
             }
 
             PlayerMovePacket playerMove = new PlayerMovePacket();
+            currentPlayerEntity.Teleport(playerMove.Position.X, playerMove.Position.Y, playerMove.Position.Z);
 
-            currentPlayerEntity.Teleport(playerMove.X, playerMove.Y, playerMove.Z);
         }
 
         if (packet.GetPacketType() == PacketType.Toast)

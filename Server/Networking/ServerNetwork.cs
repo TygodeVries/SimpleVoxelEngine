@@ -216,16 +216,16 @@ public class ServerNetwork
         ResourcePackPacket texturepackPacket = new ResourcePackPacket();
         texturepackPacket.resourceType = ResourceType.BLOCKS_TEXTURES;
         texturepackPacket.names = PluginLoader.blockTextureBuilder.GetNames();
-        texturepackPacket.textureResolution = PluginLoader.blockTextureBuilder.TextureResolution;
         texturepackPacket.resourceData = PluginLoader.blockTextureBuilder.GetTexture();
+        texturepackPacket.textureResolution = PluginLoader.blockTextureBuilder.TextureResolution;
         connection.SendPacket(texturepackPacket.Write());
 
         // The item textures
         texturepackPacket = new ResourcePackPacket();
         texturepackPacket.resourceType = ResourceType.ITEMS_TEXTURES;
         texturepackPacket.names = PluginLoader.itemTextureBuilder.GetNames();
-        texturepackPacket.textureResolution = PluginLoader.itemTextureBuilder.TextureResolution;
         texturepackPacket.resourceData = PluginLoader.itemTextureBuilder.GetTexture();
+        texturepackPacket.textureResolution = PluginLoader.itemTextureBuilder.TextureResolution;
         connection.SendPacket(texturepackPacket.Write());
 
         foreach ((string, byte[]) clip in PluginLoader.audioBuilder)

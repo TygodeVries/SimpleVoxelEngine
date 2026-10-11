@@ -4,11 +4,13 @@
     "Projects": [
       {
         "Path": "Client\\Client.csproj",
-        "Action": "Start"
+        "Action": "Start",
+        "DebugTarget": "Client"
       },
       {
         "Path": "Server\\Server.csproj",
-        "Action": "Start"
+        "Action": "Start",
+        "DebugTarget": "Server"
       }
     ]
   }

@@ -27,7 +27,7 @@ public class Program
 
         AnsiConsole.MarkupLine("Loading Registry...");
         Registry.InRegistryStage = true;
-        Defaults.Register();
+        Defaults.RegisterServer();
         PluginLoader.RegisterAll();
         Registry.InRegistryStage = false;
 

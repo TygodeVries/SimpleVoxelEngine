@@ -2,7 +2,6 @@
 using Shared.Networking;
 using Shared.Networking.Packets.Writers;
 using Shared.Worlds;
-using static Shared.Worlds.Chunk;
 
 namespace Server.Worlds;
 
@@ -104,7 +103,7 @@ public class PlayerEntity : ServerEntity
     /// <summary>
     /// The view distance of the player
     /// </summary>
-    private const int ChunkLoadDistance = 20;
+    private const int ChunkLoadDistance = 5;
 
     /// <summary>
     /// The lists of chunks that are loaded
@@ -371,20 +370,20 @@ public class PlayerEntity : ServerEntity
     {
         base.Teleport(position);
         PlayerMovePacket playerMove = new PlayerMovePacket();
-        playerMove.X = position.X;
-        playerMove.Y = position.Y;
-        playerMove.Z = position.Z;
+        playerMove.Position = position;
 
         Connection.SendPacket(playerMove.Write());
     }
 
+    public Vector3 Direction { get; private set; }
 
     private void HandlePlayerMove(Packet packet)
     {
         PlayerMovePacket playerMovePacket = new PlayerMovePacket();
         playerMovePacket.Read(packet);
 
-        base.Teleport(new Vector3(playerMovePacket.X, playerMovePacket.Y, playerMovePacket.Z));
+        base.Teleport(playerMovePacket.Position);
+        Direction = playerMovePacket.Direction;
 
         int newChunkX = WorldToChunk(Position.X);
         int newChunkY = WorldToChunk(Position.Y);
@@ -598,14 +597,14 @@ public class PlayerEntity : ServerEntity
         Connection.SendPacket(toastPacket.Write());
     }
 
-    private static readonly (int X, int Y, int Z, Direction Direction, Direction Opposite)[] ChunkDirections =
+    private static readonly (int X, int Y, int Z, Shared.Worlds.Chunk.Direction Direction, Shared.Worlds.Chunk.Direction Opposite)[] ChunkDirections =
     {
-        (-1,  0,  0, Direction.Left,    Direction.Right),
-        ( 1,  0,  0, Direction.Right,   Direction.Left),
-        ( 0, -1,  0, Direction.Down,    Direction.Up),
-        ( 0,  1,  0, Direction.Up,      Direction.Down),
-        ( 0,  0, -1, Direction.Back,    Direction.Forward),
-        ( 0,  0,  1, Direction.Forward, Direction.Back)
+        (-1,  0,  0, Shared.Worlds.Chunk.Direction.Left,    Shared.Worlds.Chunk.Direction.Right),
+        ( 1,  0,  0, Shared.Worlds.Chunk.Direction.Right,   Shared.Worlds.Chunk.Direction.Left),
+        ( 0, -1,  0, Shared.Worlds.Chunk.Direction.Down,    Shared.Worlds.Chunk.Direction.Up),
+        ( 0,  1,  0, Shared.Worlds.Chunk.Direction.Up,      Shared.Worlds.Chunk.Direction.Down),
+        ( 0,  0, -1, Shared.Worlds.Chunk.Direction.Back,    Shared.Worlds.Chunk.Direction.Forward),
+        ( 0,  0,  1, Shared.Worlds.Chunk.Direction.Forward, Shared.Worlds.Chunk.Direction.Back)
     };
 
 }

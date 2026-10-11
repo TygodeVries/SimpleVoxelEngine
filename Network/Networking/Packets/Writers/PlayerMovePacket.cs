@@ -1,25 +1,24 @@
-﻿namespace Shared.Networking;
+﻿using Shared.Mathf;
+
+namespace Shared.Networking;
 
 public class PlayerMovePacket : PacketWriter
 {
-    public float X;
-    public float Y;
-    public float Z;
+    public Vector3 Position;
+    public Vector3 Direction;
 
     public override void Read(Packet packet)
     {
-        X = packet.ReadFloat();
-        Y = packet.ReadFloat();
-        Z = packet.ReadFloat();
+        Position = packet.ReadVector3();
+        Direction = packet.ReadVector3();
     }
 
     public override Packet Write()
     {
         Packet packet = new Packet(WriterType());
 
-        packet.WriteFloat(X);
-        packet.WriteFloat(Y);
-        packet.WriteFloat(Z);
+        packet.WriteVector3(Position);
+        packet.WriteVector3(Direction);
 
         return packet;
     }

@@ -19,11 +19,11 @@ public class RenderData
     public static ImageTexture? UITexture { get; private set; } = ImageTexture.LoadFromPng("Textures/UI.png");
     public static TextureMap? UITextureMap;
 
-    public static void SetBlockTexture(List<string> names, Texture texture)
+    public static void SetBlockTexture(List<string> names, Texture texture, int resolution)
     {
         BlockTexture = texture;
 
-        BlockTexturesMap = new TextureMap(names, (ImageTexture)BlockTexture);
+        BlockTexturesMap = new TextureMap(names, (ImageTexture)BlockTexture, resolution);
 
         Console.WriteLine($"Block Texture of {((ImageTexture)BlockTexture).width}x{((ImageTexture)BlockTexture).height} loaded!");
 
@@ -33,11 +33,11 @@ public class RenderData
     public static ImageTexture? ItemTexture { get; private set; }
     public static TextureMap? ItemTexturesMap { get; private set; }
 
-    public static void SetItemTexture(List<string> names, ImageTexture texture)
+    public static void SetItemTexture(List<string> names, ImageTexture texture, int resolution)
     {
         ItemTexture = texture;
 
-        ItemTexturesMap = new TextureMap(names, ItemTexture);
+        ItemTexturesMap = new TextureMap(names, ItemTexture, resolution);
 
         Console.WriteLine($"Item Texture of {ItemTexture.width}x{ItemTexture.height} loaded!");
 
@@ -120,9 +120,9 @@ public class RenderData
     public static Texture PlayerTexture;
     public static void SetupDefaults()
     {
-        UITextureMap = new TextureMap(UITexture!);
+        UITextureMap = new TextureMap(UITexture!, 16);
 
-        BlockTexturesMap = new TextureMap(0, 0);
+        BlockTexturesMap = new TextureMap(0, 0, 1);
         PlayerTexture = ImageTexture.LoadFromPng("Textures/Player.png", flip: true);
         DefaultChunkShader = new ShaderProgram(
             File.ReadAllText("Shaders/default.vert"),
@@ -273,7 +273,7 @@ public class RenderData
 
     public static void MakeSingleChunk(int vao, short blockType)
     {
-        Vector2[] topFace = BlockTexturesMap.GetBlockTexture(blockType, BlockFace.Up);
+        Vector2[] topFace = BlockTexturesMap.GetBlockTexture(blockType, BlockFace.Up, false);
 
         float[] uv = new float[24 * 2];
 

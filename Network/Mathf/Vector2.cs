@@ -42,6 +42,14 @@ public struct Vector2
         );
     }
 
+    public static Vector2 operator *(Vector2 a, Vector2 b)
+    {
+        return new Vector2(
+            a.X * b.X,
+            a.Y * b.Y
+        );
+    }
+
     /// <summary>
     /// The length (magnitude) of this vector.
     /// </summary>

@@ -7,7 +7,7 @@ public class Program
 {
     public static int Version = 0;
 
-    private static async Task LookForDeadParentAsync(int parentPid)
+    private static async Task LookForKilledParentAsync(int parentPid)
     {
         try
         {
@@ -57,7 +57,7 @@ public class Program
             {
                 if (int.TryParse(args[1], out int parentPid))
                 {
-                    _ = LookForDeadParentAsync(parentPid);
+                    _ = LookForKilledParentAsync(parentPid);
                 }
             }
         }

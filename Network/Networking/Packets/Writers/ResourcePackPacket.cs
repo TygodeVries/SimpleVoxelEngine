@@ -14,6 +14,9 @@ public class ResourcePackPacket : PacketWriter
         Packet packet = new Packet(WriterType());
 
         packet.WriteInt((int)resourceType);
+
+        if (textureResolution == 0)
+            textureResolution = 1;
         packet.WriteInt(textureResolution);
 
         packet.WriteInt(names.Count);

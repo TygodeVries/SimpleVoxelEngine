@@ -6,7 +6,16 @@ public class Defaults
     public static EntityType PlayerEntity = EntityType.Unregisterd;
     public static Block AirBlock = Block.Unregistered;
 
-    public static void Register()
+    public static void RegisterClient()
+    {
+        Registry.InRegistryStage = true;
+        AirBlock = Registry.CreateBlock("air");
+        AirBlock.Visible = false;
+        AirBlock.Solid = false;
+        Registry.InRegistryStage = false;
+    }
+
+    public static void RegisterServer()
     {
         AirBlock = Registry.CreateBlock("air");
         AirBlock.Visible = false;

@@ -23,6 +23,7 @@ public class EntityFactory
         Console.WriteLine("Mesh is " + entityType.Mesh);
         if (entityType.Mesh == "?")
             return visibleEntity;
+
         visibleEntity.SetMesh(RenderData.models[entityType.Mesh]);
         return visibleEntity;
     }

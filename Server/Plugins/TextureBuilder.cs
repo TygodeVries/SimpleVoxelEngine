@@ -32,7 +32,13 @@ public class TextureBuilder
     public byte[] GetTexture()
     {
         if (textures.Count == 0)
-            throw new InvalidOperationException("No textures have been added.");
+        {
+            Console.WriteLine($"[WARN] Texture Builder is empty");
+            Image img = new Image<Rgba32>(1, 1);
+            MemoryStream stream = new MemoryStream();
+            img.SaveAsPng(stream);
+            return stream.ToArray();
+        }
 
         using var firstImage = Image.Load<Rgba32>(textures[0]);
 
@@ -50,12 +56,16 @@ public class TextureBuilder
 
         try
         {
-            if (images.Any(x =>
+            var invalidTexture = images.FirstOrDefault(x =>
                 x.Width != textureSize ||
-                x.Height != textureSize))
+                x.Height != textureSize);
+
+            if (invalidTexture is not null)
             {
                 throw new InvalidOperationException(
-                    "All textures must be square and have the same dimensions.");
+                    $"All textures must be square and have the same dimensions. " +
+                    $"Server texture size is {textureSize}x{textureSize}, but the texture is " +
+                    $"{invalidTexture.Width}x{invalidTexture.Height}.");
             }
 
             int columns = (int)Math.Ceiling(Math.Sqrt(images.Count));

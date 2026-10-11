@@ -59,8 +59,7 @@ public class Hotbar
             Keys.D6,
             Keys.D7,
             Keys.D8,
-            Keys.D9,
-            Keys.D0,
+            Keys.D9
         };
 
         for (int i = 0; i < keys.Length; i++)

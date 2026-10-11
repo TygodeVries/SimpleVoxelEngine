@@ -9,12 +9,14 @@ public class ChunkMesher
     private static List<float> verts = new List<float>();
     private static List<int> ind = new List<int>();
     private static List<float> uvs = new List<float>();
+    private static List<float> normalUvs = new List<float>();
     private static List<float> normals = new List<float>();
     private static List<float> aos = new List<float>();
     public static int GenerateMesh(Chunk chunk, out int indexSize)
     {
         verts.Clear();
         ind.Clear();
+        normalUvs.Clear();
         uvs.Clear();
         normals.Clear();
         aos.Clear();
@@ -86,6 +88,24 @@ public class ChunkMesher
             0,
             0);
 
+        // Normal UVs
+        int nuvVbo = GL.GenBuffer();
+        GL.BindBuffer(BufferTarget.ArrayBuffer, nuvVbo);
+        GL.BufferData(
+            BufferTarget.ArrayBuffer,
+            normalUvs.Count * sizeof(float),
+            normalUvs.ToArray(),
+            BufferUsage.StaticDraw);
+
+        GL.EnableVertexAttribArray(2);
+        GL.VertexAttribPointer(
+            2,
+            2,
+            VertexAttribPointerType.Float,
+            false,
+            0,
+            0);
+
         // Normals
         int normalVbo = GL.GenBuffer();
         GL.BindBuffer(BufferTarget.ArrayBuffer, normalVbo);
@@ -95,22 +115,32 @@ public class ChunkMesher
             normals.ToArray(),
             BufferUsage.StaticDraw);
 
-        GL.EnableVertexAttribArray(2);
+        GL.EnableVertexAttribArray(3);
         GL.VertexAttribPointer(
-            2,
+            3,
             3,
             VertexAttribPointerType.Float,
             false,
             0,
             0);
 
+        // Ambient Occlusion
         int aoVbo = GL.GenBuffer();
         GL.BindBuffer(BufferTarget.ArrayBuffer, aoVbo);
+        GL.BufferData(
+            BufferTarget.ArrayBuffer,
+            aos.Count * sizeof(float),
+            aos.ToArray(),
+            BufferUsage.StaticDraw);
 
-        GL.BufferData(BufferTarget.ArrayBuffer, aos.Count * sizeof(float), aos.ToArray(), BufferUsage.StaticDraw);
-        GL.EnableVertexAttribArray(3);
-
-        GL.VertexAttribPointer(3, 1, VertexAttribPointerType.Float, false, 0, 0);
+        GL.EnableVertexAttribArray(4);
+        GL.VertexAttribPointer(
+            4,
+            1,
+            VertexAttribPointerType.Float,
+            false,
+            0,
+            0);
 
         // Indices
         int ebo = GL.GenBuffer();
@@ -123,6 +153,7 @@ public class ChunkMesher
 
         GL.BindVertexArray(0);
         GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+
         return vao;
     }
 
@@ -157,11 +188,69 @@ public class ChunkMesher
         else if (normal == -Vector3i.UnitX)
             face = BlockFace.Left;
 
+        var textureSize = new Shared.Mathf.Vector2(1f / 8f, 1f / 8f);
+
+        var tileX = 0;
+        var tileY = 0;
+
+        switch (face)
+        {
+            case BlockFace.Up:
+            case BlockFace.Down:
+                tileX = x;
+                tileY = z;
+                break;
+
+            case BlockFace.Forward:
+            case BlockFace.Backward:
+                tileX = x;
+                tileY = y;
+                break;
+
+            case BlockFace.Left:
+            case BlockFace.Right:
+                tileX = z;
+                tileY = y;
+                break;
+        }
+
+        var textureOffset = textureSize * new Shared.Mathf.Vector2(
+            ((tileX % 8) + 8) % 8,
+            ((tileY % 8) + 8) % 8
+        );
+
         Vector2[] uv =
             Shared.Mathf.Vector2.ArrayToOpenTK(
                 RenderData.BlockTexturesMap.GetBlockTexture(
                     voxel,
-                    face));
+                    face,
+                    false,
+                    textureSize,
+                    textureOffset
+                )
+            );
+
+        Vector2[] normalUv =
+        {
+            new Vector2(-1, -1),
+            new Vector2(-1, -1),
+            new Vector2(-1, -1),
+            new Vector2(-1, -1)
+        };
+
+        if (RenderData.BlockTexturesMap.HasNormal(voxel, face))
+        {
+            normalUv =
+                Shared.Mathf.Vector2.ArrayToOpenTK(
+                    RenderData.BlockTexturesMap.GetBlockTexture(
+                        voxel,
+                        face,
+                        true,
+                        textureSize,
+                        textureOffset
+                    )
+                );
+        }
 
         if (uv.Length == 0)
             throw new Exception("No UV found for block.");
@@ -182,6 +271,7 @@ public class ChunkMesher
             AddQuad(world,
                 v0, v1, v2, v3,
                 uv[3], uv[0], uv[1], uv[2],
+                normalUv[3], normalUv[0], normalUv[1], normalUv[2],
                 n);
         }
 
@@ -195,6 +285,7 @@ public class ChunkMesher
             AddQuad(world,
                 v0, v1, v2, v3,
                 uv[3], uv[2], uv[1], uv[0],
+                normalUv[3], normalUv[2], normalUv[1], normalUv[0],
                 n);
         }
 
@@ -208,6 +299,7 @@ public class ChunkMesher
             AddQuad(world,
                 v0, v1, v2, v3,
                 uv[0], uv[3], uv[2], uv[1],
+                normalUv[0], normalUv[3], normalUv[2], normalUv[1],
                 n);
         }
 
@@ -221,6 +313,7 @@ public class ChunkMesher
             AddQuad(world,
                 v0, v1, v2, v3,
                 uv[0], uv[1], uv[2], uv[3],
+                normalUv[0], normalUv[1], normalUv[2], normalUv[3],
                 n);
         }
 
@@ -234,6 +327,7 @@ public class ChunkMesher
             AddQuad(world,
                 v0, v1, v2, v3,
                 uv[3], uv[2], uv[1], uv[0],
+                normalUv[3], normalUv[2], normalUv[1], normalUv[0],
                 n);
         }
 
@@ -247,6 +341,7 @@ public class ChunkMesher
             AddQuad(world,
                 v0, v1, v2, v3,
                 uv[3], uv[0], uv[1], uv[2],
+                normalUv[3], normalUv[0], normalUv[1], normalUv[2],
                 n);
         }
     }
@@ -256,6 +351,7 @@ public class ChunkMesher
     Vector3i worldPos,
     Vector3 v0, Vector3 v1, Vector3 v2, Vector3 v3,
     Vector2 uv0, Vector2 uv1, Vector2 uv2, Vector2 uv3,
+    Vector2 normalUv0, Vector2 normalUv1, Vector2 normalUv2, Vector2 normalUv3,
     Vector3 normal)
     {
         int x = worldPos.X;
@@ -355,12 +451,14 @@ public class ChunkMesher
             AddTris(
                 v0, v1, v2,
                 uv0, uv1, uv2,
+                normalUv0, normalUv1, normalUv2,
                 map.a0, map.a1, map.a2,
                 normal);
 
             AddTris(
                 v2, v3, v0,
                 uv2, uv3, uv0,
+                normalUv2, normalUv3, normalUv0,
                 map.a2, map.a3, map.a0,
                 normal);
         }
@@ -369,12 +467,14 @@ public class ChunkMesher
             AddTris(
                 v0, v1, v3,
                 uv0, uv1, uv3,
+                normalUv0, normalUv1, normalUv3,
                 map.a0, map.a1, map.a3,
                 normal);
 
             AddTris(
                 v1, v2, v3,
                 uv1, uv2, uv3,
+                normalUv1, normalUv2, normalUv3,
                 map.a1, map.a2, map.a3,
                 normal);
         }
@@ -444,7 +544,7 @@ public class ChunkMesher
 
 
 
-    private static void AddTris(Vector3 a, Vector3 b, Vector3 c, Vector2 uvA, Vector2 uvB, Vector2 uvC, float aoA, float aoB, float aoC, Vector3 normal)
+    private static void AddTris(Vector3 a, Vector3 b, Vector3 c, Vector2 uvA, Vector2 uvB, Vector2 uvC, Vector2 nuvA, Vector2 nuvB, Vector2 nuvC, float aoA, float aoB, float aoC, Vector3 normal)
     {
 
         verts.Add(a.X);
@@ -465,6 +565,9 @@ public class ChunkMesher
         uvs.Add(uvB.X); uvs.Add(uvB.Y);
         uvs.Add(uvC.X); uvs.Add(uvC.Y);
 
+        normalUvs.Add(nuvA.X); normalUvs.Add(nuvA.Y);
+        normalUvs.Add(nuvB.X); normalUvs.Add(nuvB.Y);
+        normalUvs.Add(nuvC.X); normalUvs.Add(nuvC.Y);
 
         for (int i = 0; i < 3; i++)
         {
@@ -480,8 +583,6 @@ public class ChunkMesher
 
     private static bool IsVisible(Vector3i pos)
     {
-
-
         Block? block = LocalWorld.World.GetBlockAt(pos.X, pos.Y, pos.Z);
         return block != null && block.Visible;
     }

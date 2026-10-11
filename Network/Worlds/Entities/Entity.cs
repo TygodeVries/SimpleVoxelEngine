@@ -341,6 +341,14 @@ public abstract class Entity
             SetVelocityZ(0, false);
         else
             TeleportZ(newZ);
+
+        if (hitX || hitY || hitZ)
+            OnCollision();
+    }
+
+    public virtual void OnCollision()
+    {
+
     }
 
     public void Destroy()

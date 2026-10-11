@@ -42,6 +42,7 @@ public class ChunkRenderer : Renderer
         {
             RequestingUpdate[nearestIndex] = RequestingUpdate[lastIndex];
         }
+
         RequestingUpdate.RemoveAt(lastIndex);
 
         return nearestChunk;
@@ -94,31 +95,25 @@ public class ChunkRenderer : Renderer
                 renderType = ChunkRenderType.Empty;
                 return;
             }
-            else
-            {
-                indSize = RenderData.SolidIndexCount;
-                RenderData.MakeSingleChunk(modelObjectGlId, blockType);
-                renderType = ChunkRenderType.Solid;
-            }
+        }
+
+        // #NOTE Removed the single chunk system
+
+        if (modelObjectGlId != -1)
+        {
+            GL.DeleteVertexArray(modelObjectGlId);
+            modelObjectGlId = -1;
+        }
+
+        modelObjectGlId = ChunkMesher.GenerateMesh(Chunk, out indSize);
+
+        if (modelObjectGlId == -1)
+        {
+            renderType = ChunkRenderType.Empty;
         }
         else
         {
-            if (modelObjectGlId != -1)
-            {
-                GL.DeleteVertexArray(modelObjectGlId);
-                modelObjectGlId = -1;
-            }
-
-            modelObjectGlId = ChunkMesher.GenerateMesh(Chunk, out indSize);
-
-            if (modelObjectGlId == -1)
-            {
-                renderType = ChunkRenderType.Empty;
-            }
-            else
-            {
-                renderType = ChunkRenderType.Normal;
-            }
+            renderType = ChunkRenderType.Normal;
         }
     }
 

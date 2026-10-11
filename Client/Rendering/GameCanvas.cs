@@ -401,8 +401,15 @@ public class GameCanvas : GameWindow
             chunkRenderer.Update();
         }
 
+        int speed = 1;
+        if (ChunkRenderer.RequestingUpdate.Count > 300)
+            speed = 3;
+
+        if (ChunkRenderer.RequestingUpdate.Count > 1000)
+            speed = 5;
+
         // Update a max amount of chunks at a time!
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < speed; i++)
         {
             ChunkRenderer? ch = ChunkRenderer.PopNearest();
             if (ch != null)

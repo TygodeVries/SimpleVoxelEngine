@@ -13,13 +13,10 @@ public class TextureMap
     private int width = 0;
     private int height = 0;
 
-    private int blockWidth = 16;
-    private int blockHeight = 16;
-
     public int row;
     public int col;
 
-    public TextureMap(List<string> ids, ImageTexture texture)
+    public TextureMap(List<string> ids, ImageTexture texture, int resolution)
     {
         this.names = ids;
 
@@ -31,43 +28,51 @@ public class TextureMap
         width = texture.width;
         height = texture.height;
 
-        row = width / blockWidth;
-        col = height / blockHeight;
+        row = width / resolution;
+        col = height / resolution;
     }
 
-    public TextureMap(ImageTexture texture)
+    public bool TextureExists(string texture)
+    {
+        return names.Contains(texture);
+    }
+
+    public TextureMap(ImageTexture texture, int resolution)
     {
         this.width = texture.width;
         this.height = texture.height;
 
-        row = width / blockWidth;
-        col = height / blockHeight;
+        row = width / resolution;
+        col = height / resolution;
     }
 
-    public TextureMap(int width, int height)
+    public TextureMap(int width, int height, int resolution)
     {
         this.width = width;
         this.height = height;
 
-        row = width / blockWidth;
-        col = height / blockHeight;
+        row = width / resolution;
+        col = height / resolution;
     }
 
-    private readonly Dictionary<(int textureId, BlockFace face), Vector2[]> _uvMappings = new();
+    private Dictionary<(short blockType, BlockFace face, bool normal), string> mappings = new Dictionary<(short blockType, BlockFace face, bool normal), string>();
 
     public void AddMapping(string textureId, short blockType, BlockFace face)
     {
-        _uvMappings[(blockType, face)] = GetUV(textureId.ToLower());
+        mappings.Add((blockType, face, textureId.EndsWith("_normal")), textureId);
     }
 
-    public Vector2[] GetBlockTexture(int textureId, BlockFace face)
+    public Vector2[] GetBlockTexture(short blockType, BlockFace face, bool normal, Vector2? size = null, Vector2? offset = null)
     {
-        return _uvMappings.TryGetValue((textureId, face), out var uv)
-            ? uv
-            : new Vector2[0];
+        return GetUV(mappings[(blockType, face, normal)], size, offset);
     }
 
-    public Vector2[] GetUV(string textureName)
+    public bool HasNormal(short blockType, BlockFace face)
+    {
+        return mappings.ContainsKey((blockType, face, true));
+    }
+
+    public Vector2[] GetUV(string textureName, Vector2? size = null, Vector2? offset = null)
     {
         int index = names.IndexOf(textureName.ToLower());
         if (index == -1)
@@ -75,23 +80,36 @@ public class TextureMap
             throw new FileNotFoundException($"The texture {textureName} could not be found!");
         }
 
-        return GetUV(index);
+        return GetUV(index, size, offset);
     }
 
-    public Vector2[] GetUV(int textureId)
+    public Vector2[] GetUV(int textureId, Vector2? size = null, Vector2? offset = null)
     {
-        if (textureId == -1)
+        if (size == null)
+            size = new Vector2(1, 1);
+
+        if (offset == null)
+            offset = new Vector2(0, 0);
+
+        if (textureId < 0 || textureId >= row * col)
         {
-            throw new Exception("-1 is not a valid Texture RegistryId.");
+            throw new ArgumentOutOfRangeException(
+                nameof(textureId),
+                "Texture ID is outside the texture atlas."
+            );
         }
+
         int texX = textureId % row;
         int texY = textureId / row;
 
-        float uvXmin = texX / (float)row;
-        float uvYmin = texY / (float)col;
+        float tileWidth = 1f / row;
+        float tileHeight = 1f / col;
 
-        float uvXmax = uvXmin + (blockWidth / (float)width);
-        float uvYmax = uvYmin + (blockHeight / (float)height);
+        float uvXmin = (texX * tileWidth) + (offset.Value.X * tileWidth);
+        float uvYmin = (texY * tileHeight) + (offset.Value.Y * tileHeight);
+
+        float uvXmax = uvXmin + (size.Value.X * tileWidth);
+        float uvYmax = uvYmin + (size.Value.Y * tileHeight);
 
         return new[]
         {
@@ -99,6 +117,7 @@ public class TextureMap
         new Vector2(uvXmax, uvYmin),
         new Vector2(uvXmax, uvYmax),
         new Vector2(uvXmin, uvYmax)
-    };
+     };
     }
 }
+
