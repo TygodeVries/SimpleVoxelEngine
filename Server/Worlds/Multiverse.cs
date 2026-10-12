@@ -6,17 +6,45 @@ namespace Server.Worlds;
 
 public class Multiverse
 {
-    // #TODO support mutliple worlds
+    public static List<World> worlds = new List<World>();
 
-    private static World world = new World();
-    public static World GetMainWorld()
+    public static World? GetWorld(int index)
     {
-        return world;
+        if (index >= worlds.Count)
+            return null;
+
+        return worlds[index];
     }
-
-    internal static void Start()
+    public static World CreateWorld(string name)
     {
-        world.OnBlockPlace += World_OnBlockPlace;
+        World world = new World(name);
+        worlds.Add(world);
+
+        world.OnBlockPlace += (args) =>
+        {
+            SetBlockPacket blockPacket = new SetBlockPacket
+            {
+                X = args.x,
+                Y = args.y,
+                Z = args.z,
+                Type = args.block.RegistryId
+            };
+
+            Packet packet = blockPacket.Write();
+
+            int chunkX = (int)Math.Floor(args.x / 16.0);
+            int chunkY = (int)Math.Floor(args.y / 16.0);
+            int chunkZ = (int)Math.Floor(args.z / 16.0);
+
+            foreach (PlayerEntity player in world.GetEntitiesOfType<PlayerEntity>())
+            {
+                if (player.IsChunkLoaded(chunkX, chunkY, chunkZ))
+                {
+                    player.Connection.SendPacket(packet);
+                }
+            }
+        };
+
         world.OnEntitySpawn += (args) =>
         {
             if (args.Entity is PlayerEntity player)
@@ -48,52 +76,44 @@ public class Multiverse
                 }
             }
         };
+
+        return world;
+    }
+
+    public static World? GetWorld(string name)
+    {
+        return worlds.FirstOrDefault(o =>
+        {
+            return o.Name == name;
+        });
     }
 
     public static List<PlayerEntity> GetPlayers()
     {
-        return world.GetEntitiesOfType<PlayerEntity>();
+        List<PlayerEntity> players = new List<PlayerEntity>();
+
+        foreach (World world in worlds)
+        {
+            players.AddRange(world.GetEntitiesOfType<PlayerEntity>());
+        }
+
+        return players;
     }
     public static event Action<PlayerEntity>? OnPlayerJoin;
 
-    private static void World_OnBlockPlace((Block block, int x, int y, int z) obj)
-    {
-        SetBlockPacket blockPacket = new SetBlockPacket
-        {
-            X = obj.x,
-            Y = obj.y,
-            Z = obj.z,
-            Type = obj.block.RegistryId
-        };
-
-        Packet packet = blockPacket.Write();
-
-        int chunkX = (int)Math.Floor(obj.x / 16.0);
-        int chunkY = (int)Math.Floor(obj.y / 16.0);
-        int chunkZ = (int)Math.Floor(obj.z / 16.0);
-
-        foreach (PlayerEntity player in world.GetEntities()
-            .Where(o => o is PlayerEntity)
-            .Cast<PlayerEntity>())
-        {
-            if (player.IsChunkLoaded(chunkX, chunkY, chunkZ))
-            {
-                player.Connection.SendPacket(packet);
-            }
-        }
-    }
-
-
     internal static void TickWorlds()
     {
-        world.Tick();
-
-        foreach (Chunk chunk in world.GetChunks())
+        foreach (World world in worlds)
         {
-            if (chunk.isDirty)
+            world.Tick();
+
+            foreach (Chunk chunk in world.GetChunks())
             {
-                chunk.Optimize();
-                chunk.isDirty = false;
+                if (chunk.isDirty)
+                {
+                    chunk.Optimize();
+                    chunk.isDirty = false;
+                }
             }
         }
     }

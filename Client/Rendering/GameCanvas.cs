@@ -100,7 +100,7 @@ public class GameCanvas : GameWindow
         OnUpdate += () =>
         {
             RaycastHit? hit = LocalWorld.World.Raycast(Camera.Position, Camera.Direction, 5);
-            if (hit != null)
+            if (hit != null && !HideUI)
             {
                 lineRenderer.position = hit.WorldBlockPos;
             }
@@ -255,6 +255,8 @@ public class GameCanvas : GameWindow
 
     public int RenderRenderers(int startIndex, int untilExcludeDepth, Matrix4 viewMatrix, Matrix4 orthoProjection, Matrix4 projectionMatrix)
     {
+
+
         // Loop over every thing we are rendering
         for (int i = startIndex; i < renderers.Count; i++)
         {
@@ -263,7 +265,7 @@ public class GameCanvas : GameWindow
             if (!renderer.visible)
                 continue;
 
-            if (hideUi && renderer.GetType() == typeof(UIImageRenderer))
+            if (HideUI && (renderer.GetType() == typeof(UIImageRenderer) || renderer.GetType() == typeof(UITextRenderer)))
             {
                 continue;
             }
@@ -385,7 +387,7 @@ public class GameCanvas : GameWindow
     {
         Keyboard.Current.SetKeysState(e.Key, false);
     }
-    private bool hideUi = false;
+    public static bool HideUI = false;
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
         if ((float)args.Time < 0.1f)
@@ -393,7 +395,7 @@ public class GameCanvas : GameWindow
 
         if (Keyboard.Current.IsPressedThisFrame(Keys: OpenTK.Windowing.GraphicsLibraryFramework.Keys.F1))
         {
-            hideUi = !hideUi;
+            HideUI = !HideUI;
         }
 
         foreach (ChunkRenderer chunkRenderer in chunkRenderers)

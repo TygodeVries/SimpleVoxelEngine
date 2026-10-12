@@ -34,7 +34,6 @@ public class Program
         Stopwatch serverTime = Stopwatch.StartNew();
 
         AnsiConsole.MarkupLine("Loading World...");
-        Multiverse.Start();
 
         PluginLoader.OnPluginChange += () =>
         {

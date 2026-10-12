@@ -52,6 +52,23 @@ public class PlayerEntity : ServerEntity
                 Program.Restart();
             }
         };
+
+        OnWorldChange += () =>
+        {
+
+            SendToast("Swapping Worlds...");
+
+            foreach (var chunk in loadedChunks)
+            {
+                SendUnloadChunk(chunk.X, chunk.Y, chunk.Z);
+            }
+
+            loadedChunks.Clear();
+
+            // Load all World data
+            Multiverse.SendWorldData(connection, GetWorld()!);
+            UpdateChunks();
+        };
     }
 
     public override void OnSpawn()
@@ -405,7 +422,9 @@ public class PlayerEntity : ServerEntity
 
     private void UpdateChunks()
     {
-        World world = GetWorld();
+        World? world = GetWorld();
+        if (world == null)
+            return;
 
         int centerX = currentChunkX;
         int centerY = currentChunkY;

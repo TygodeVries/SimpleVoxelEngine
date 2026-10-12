@@ -11,7 +11,7 @@ namespace Client;
 // #TODO some packets should NOT be in here.
 public class LocalWorld
 {
-    public static World World { get; private set; } = new World();
+    public static World World { get; private set; } = new World("local");
 
     public static void ResetWorld()
     {
@@ -26,7 +26,7 @@ public class LocalWorld
             World.Tick();
         }
 
-        World = new World();
+        World = new World("local");
         localPlayerId = -1;
 
         Registry.OnBlockRegister -= Registry_OnBlockRegister;

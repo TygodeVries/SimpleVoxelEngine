@@ -242,8 +242,6 @@ public class ServerNetwork
             Console.WriteLine("Send! : " + clip.Item1);
         }
 
-
-
         // THEN the registry second.
         RegistryDataPacket registryPacket = new RegistryDataPacket();
         registryPacket.Data = Registry.SaveAll(); // #TODO cache this!
@@ -263,11 +261,15 @@ public class ServerNetwork
             connection.SendPacket(authenticatePacket.Write());
         };
 
-        // Load all World data
-        Multiverse.SendWorldData(connection, Multiverse.GetMainWorld());
+        World? world = Multiverse.GetWorld(0);
+        if (world == null)
+        {
+            Console.WriteLine("Server has no worlds!");
+            return;
+        }
 
-        Console.WriteLine("Spawning player...");
-        Multiverse.GetMainWorld().SpawnEntity(player);
+        world.SpawnEntity(player);
+        player.SwapWorld(world);
     }
 
     public void BroadcastPacket(Packet packet, Connection? exlude = null)

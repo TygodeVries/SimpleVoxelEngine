@@ -17,7 +17,7 @@ public abstract class Entity
     }
 
     public event Action? OnEntityIdSet;
-    private World? world;
+    private World? world = null;
     public World? GetWorld()
     {
         return world;
@@ -25,12 +25,17 @@ public abstract class Entity
 
     public event Action? OnWorldChange;
 
-    /// <summary>
-    /// A bad function to call if you don't know what you are doing!!!
-    /// </summary>
-    /// <param Identifier="RegistryId"></param>
-    public void SetWorld(World world)
+    public void SwapWorld(World world)
     {
+        if (this.world == world)
+            return; // Already here!
+
+        if (this.world != null)
+        {
+            this.world.DestroyEntity(this);
+            world.SpawnEntity(this);
+        }
+
         this.world = world;
         OnWorldChange?.Invoke();
     }

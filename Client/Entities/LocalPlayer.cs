@@ -64,7 +64,7 @@ public class LocalPlayer : Entity
 
 
         Camera.Position = Position + new Vector3(0, playerHeight, 0);
-        if (((Vector3.Distance(lastPacketPosition, Position) > 0.3f) || (Vector3.Distance(lastPacketDirection, Camera.Direction) > 0.3f)) && !dontSendPackets)
+        if (((Vector3.Distance(lastPacketPosition, Position) > 0.3f) || (Vector3.Distance(lastPacketDirection, Camera.Direction) > 0.03f)) && !dontSendPackets)
         {
             PlayerMovePacket packet = new PlayerMovePacket();
             packet.Position = Position;

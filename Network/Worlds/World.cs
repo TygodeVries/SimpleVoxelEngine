@@ -4,9 +4,10 @@ using Shared.Mathf;
 
 public class World
 {
-    public World()
+    public string Name { get; private set; }
+    public World(string name)
     {
-
+        this.Name = name;
     }
 
     private BlockFont blockFont = new BlockFont();
@@ -71,7 +72,7 @@ public class World
     public void SpawnEntity(Entity entity, int forceId = -1)
     {
         this.futureEntities.Add(entity);
-        entity.SetWorld(this);
+        entity.SwapWorld(this);
 
 
         if (forceId == -1)
@@ -118,7 +119,6 @@ public class World
         {
             entity.Tick();
         }
-
 
         RunSpawn();
         OnTick?.Invoke();
